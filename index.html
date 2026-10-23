@@ -1,1 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Master OS | Unified Life & GenAI Dashboard</title>
+  
+  <!-- Firebase SDKs via CDN -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
+  <style>
+    :root[data-theme="dark"] {
+      --bg: #090d16;
+      --surface: #111827;
+      --surface-hover: #1e293b;
+      --border: #26334d;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #6366f1;
+      --accent-hover: #818cf8;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --exam: #ec4899;
+      --dsa: #06b6d4;
+      --genai: #8b5cf6;
+      --backend: #f97316;
+      --drop-bg: rgba(99, 102, 241, 0.15);
+      --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.45);
+    }
+
+    :root[data-theme="light"] {
+      --bg: #f1f5f9;
+      --surface: #ffffff;
+      --surface-hover: #f8fafc;
+      --border: #cbd5e1;
+      --text: #0f172a;
+      --text-muted: #475569;
+      --accent: #4f46e5;
+      --accent-hover: #4338ca;
+      --success: #059669;
+      --warning: #d97706;
+      --exam: #db2777;
+      --dsa: #0891b2;
+      --genai: #7c3aed;
+      --backend: #ea580c;
+      --drop-bg: rgba(79, 70, 229, 0.12);
+      --card-shadow: 0 4px 15px rgba(15, 23, 42, 0.06);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); line-height: 1.5; padding: 16px; transition: background-color 0.2s, color 0.2s; min-height: 100vh; }
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    /* AUTH GATEWAY SCREEN */
+    #authGateway {
+      display: flex; justify-content: center; align-items: center; min-height: 85vh; padding: 20px;
+    }
+    .auth-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+      padding: 36px 30px; width: 100%; max-width: 440px; box-shadow: var(--card-shadow); text-align: center;
+    }
+    .auth-card h2 { font-size: 1.45rem; font-weight: 800; margin-bottom: 6px; }
+    .auth-card p { font-size: 0.84rem; color: var(--text-muted); margin-bottom: 22px; }
+    .auth-form { text-align: left; }
+    .auth-form label { display: block; font-size: 0.76rem; color: var(--text-muted); margin: 10px 0 4px; font-weight: 700; text-transform: uppercase; }
+    .auth-form input { width: 100%; padding: 10px 14px; font-size: 0.88rem; margin-bottom: 12px; }
+
+    /* APP WRAPPER (HIDDEN UNTIL AUTH) */
+    #appWrapper { display: none; }
+
+    header {
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;
+      padding: 16px 22px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      box-shadow: var(--card-shadow); margin-bottom: 14px;
+    }
+    .brand h1 { font-size: 1.35rem; font-weight: 800; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .badge { font-size: 0.72rem; background: var(--accent); color: #fff; padding: 3px 10px; border-radius: 999px; font-weight: 700; }
+    .header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+    .nav-tabs {
+      display: flex; gap: 10px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px;
+    }
+    .tab-btn {
+      background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); font-size: 0.88rem;
+      font-weight: 700; padding: 8px 18px; border-radius: 10px; cursor: pointer; transition: all 0.15s ease;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    button, select, input[type="text"], input[type="password"], input[type="number"] {
+      background: var(--bg); color: var(--text); border: 1px solid var(--border); padding: 7px 11px;
+      border-radius: 10px; font-size: 0.8rem; cursor: pointer; transition: all 0.15s ease;
+    }
+    button:hover, select:hover { border-color: var(--accent); background: var(--surface-hover); }
+    .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+    .btn-primary:hover { background: var(--accent-hover); }
+
+    .sync-status {
+      font-size: 0.73rem; font-weight: 600; padding: 4px 10px; border-radius: 8px;
+      background: var(--bg); border: 1px solid var(--border); color: var(--text-muted);
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warning); display: inline-block; }
+    .sync-dot.synced { background: var(--success); }
+    .sync-dot.syncing { background: var(--accent); animation: pulse 1s infinite alternate; }
+    .sync-dot.offline { background: var(--text-muted); }
+
+    @keyframes pulse { from { opacity: 0.3; } to { opacity: 1; } }
+
+    .tab-view { display: none; }
+    .tab-view.active { display: block; }
+
+    /* Life OS Grid */
+    .life-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 16px;
+    }
+    .life-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px;
+      box-shadow: var(--card-shadow); display: flex; flex-direction: column; gap: 12px;
+    }
+    .card-head {
+      font-size: 0.92rem; font-weight: 700; display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid var(--border); padding-bottom: 8px;
+    }
+    .todo-item {
+      display: flex; align-items: center; gap: 8px; font-size: 0.84rem; padding: 4px 0; cursor: pointer;
+    }
+    .todo-item input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer; }
+
+    /* Study OS Styling */
+    .resource-dock {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 18px;
+      margin-bottom: 14px; box-shadow: var(--card-shadow);
+    }
+    .dock-title {
+      font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);
+      margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;
+    }
+    .dock-links { display: flex; flex-wrap: wrap; gap: 8px; }
+    .dock-pill {
+      font-size: 0.74rem; font-weight: 600; padding: 4px 10px; border-radius: 8px; background: var(--bg);
+      border: 1px solid var(--border); color: var(--text); text-decoration: none; display: inline-flex;
+      align-items: center; gap: 5px; transition: all 0.15s;
+    }
+    .dock-pill:hover { border-color: var(--accent); color: var(--accent); }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 14px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; box-shadow: var(--card-shadow); }
+    .stat-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 700; }
+    .stat-value { font-size: 1.4rem; font-weight: 800; margin: 3px 0; }
+    .progress-bar-bg { width: 100%; height: 7px; background: var(--bg); border-radius: 999px; overflow: hidden; margin-top: 6px; }
+    .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--success)); width: 0%; transition: width 0.3s ease; }
+
+    .controls-bar {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between;
+      background: var(--surface); border: 1px solid var(--border); padding: 10px 16px; border-radius: 14px; margin-bottom: 12px;
+    }
+    .week-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+    .week-pill {
+      padding: 5px 11px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; background: var(--surface);
+      border: 1px solid var(--border); color: var(--text-muted); cursor: pointer;
+    }
+    .week-pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .week-pill.completed-week { border-color: var(--success); color: var(--success); }
+
+    .days-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; }
+    .day-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px;
+      display: flex; flex-direction: column; justify-content: space-between; gap: 12px; box-shadow: var(--card-shadow);
+      position: relative;
+    }
+    .day-card:hover { border-color: var(--accent); }
+    .day-card.done { border-color: var(--success); opacity: 0.88; }
+    .day-card.exam-day { border: 2px solid var(--exam); }
+
+    .day-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+    .day-badges { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+    .tag { font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: var(--bg); color: var(--text-muted); border: 1px solid var(--border); }
+    .tag.date-tag { color: var(--text); font-weight: 800; }
+    .tag.weekend { color: var(--warning); border-color: var(--warning); }
+    .tag.exam-tag { background: var(--exam); color: #fff; border-color: var(--exam); }
+    .tag.buffer-tag { color: var(--exam); border-color: var(--exam); }
+
+    .check-wrapper { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; font-size: 0.78rem; font-weight: 700; }
+    .check-wrapper input { width: 18px; height: 18px; accent-color: var(--success); cursor: pointer; }
+    .day-title { font-size: 0.95rem; font-weight: 700; margin-top: 4px; }
+    .day-card.done .day-title { text-decoration: line-through; color: var(--text-muted); }
+
+    .blocks-list {
+      display: flex; flex-direction: column; gap: 8px; margin-top: 6px; min-height: 80px;
+      border: 1px dashed transparent; border-radius: 10px; padding: 4px; transition: all 0.2s;
+    }
+    .blocks-list.drag-over { border-color: var(--accent); background: var(--drop-bg); }
+
+    .study-block {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px;
+      font-size: 0.8rem; display: flex; align-items: flex-start; gap: 8px; cursor: grab; user-select: none;
+    }
+    .study-block:active { cursor: grabbing; }
+    .study-block.dragging { opacity: 0.4; }
+    .study-block input[type="checkbox"] { margin-top: 3px; width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+    .block-content { flex: 1; }
+    .block-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+    .block-label { font-weight: 700; font-size: 0.71rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .drag-handle { color: var(--text-muted); font-size: 0.72rem; opacity: 0.5; }
+
+    .lbl-dsa { color: var(--dsa); }
+    .lbl-genai { color: var(--genai); }
+    .lbl-iitm { color: var(--exam); }
+    .lbl-sys { color: var(--backend); }
+
+    .block-content a { color: var(--accent); text-decoration: none; font-weight: 600; }
+    .block-content a:hover { text-decoration: underline; }
+
+    .day-notes {
+      width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px;
+      padding: 6px 10px; font-size: 0.78rem; resize: vertical; min-height: 32px; margin-top: 6px;
+    }
+
+    @media (max-width: 640px) { .days-grid, .life-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- ==================== GATEWAY: LOGIN SCREEN ==================== -->
+    <div id="authGateway">
+      <div class="auth-card">
+        <div style="font-size: 2.2rem; margin-bottom: 8px;">⚡</div>
+        <h2>Master Life & Study OS</h2>
+        <p>Authenticate to unlock your unified dashboard & cloud sync.</p>
+
+        <button id="gateGoogleBtn" style="width:100%; display:flex; align-items:center; justify-content:center; gap:10px; background:#fff; color:#111; font-weight:700; border:1px solid #cbd5e1; margin-bottom:16px; padding:11px; border-radius:12px;">
+          <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.347 2.825.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/></svg>
+          Sign in with Google
+        </button>
+
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:14px;">— OR ENTER CREDENTIALS —</div>
+
+        <div class="auth-form">
+          <label>Email Address</label>
+          <input type="text" id="gateEmail" placeholder="your-email@example.com" />
+          <label>Password</label>
+          <input type="password" id="gatePassword" placeholder="••••••••" />
+          <button id="gateLoginBtn" class="btn-primary" style="width:100%; padding:11px; font-weight:700; border-radius:12px; margin-top:6px;">
+            Sign In / Register
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== UNLOCKED DASHBOARD ==================== -->
+    <div id="appWrapper">
+      <header>
+        <div class="brand">
+          <h1>
+            ⚡ Master Life & Study OS
+            <span class="badge">Unified Workspace</span>
+          </h1>
+          <p>Health & Routine Tracking + 168-Day SDE/GenAI Curriculum (Live Cloud Sync)</p>
+        </div>
+        <div class="header-actions">
+          <span class="sync-status" id="syncStatusBadge">
+            <span class="sync-dot" id="syncDot"></span>
+            <span id="syncStatusText">Cloud Synced</span>
+          </span>
+          <button id="logoutBtn" style="color:var(--exam);">🚪 Sign Out</button>
+          <button id="themeBtn">🌗 Theme</button>
+        </div>
+      </header>
+
+      <!-- Master Nav Tabs -->
+      <nav class="nav-tabs">
+        <button class="tab-btn active" id="tabBtnLife" onclick="switchTab('life')">🧬 Life OS & Health</button>
+        <button class="tab-btn" id="tabBtnStudy" onclick="switchTab('study')">⚡ 168-Day Study OS</button>
+      </nav>
+
+      <!-- TAB 1: LIFE OS -->
+      <section id="viewLife" class="tab-view active">
+        <div class="life-grid">
+          <div class="life-card">
+            <div class="card-head">
+              <span>🌅 Daily Routine Blueprint</span>
+              <span style="font-size:0.75rem; color:var(--text-muted);">4:30 AM Wake</span>
+            </div>
+            <div id="routineList">
+              <label class="todo-item"><input type="checkbox" data-habit="wake" /> 4:30 AM Wake up & hydrate</label>
+              <label class="todo-item"><input type="checkbox" data-habit="bath_pray" /> Bath & morning prayer</label>
+              <label class="todo-item"><input type="checkbox" data-habit="meditate" /> Mindfulness meditation</label>
+              <label class="todo-item"><input type="checkbox" data-habit="walk" /> 2 km morning walk (Close rings)</label>
+              <label class="todo-item"><input type="checkbox" data-habit="workout" /> Gym workout / Home conditioning</label>
+              <label class="todo-item"><input type="checkbox" data-habit="office_walk" /> Skincare & walk to Amazon campus</label>
+              <label class="todo-item"><input type="checkbox" data-habit="standup_block" /> Pre-standup morning study block</label>
+              <label class="todo-item"><input type="checkbox" data-habit="iitm_block" /> Post-standup IITM block (till 1:00 PM)</label>
+              <label class="todo-item"><input type="checkbox" data-habit="sleep" /> Digital sunset & 10:30 PM sleep</label>
+            </div>
+          </div>
+
+          <div class="life-card">
+            <div class="card-head">
+              <span>🏃 Health & Biometrics</span>
+              <span style="font-size:0.75rem; color:var(--success);">Target: 50–52 kg</span>
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+              <div>
+                <label style="font-size:0.72rem; color:var(--text-muted);">Current Weight (kg):</label>
+                <input type="number" step="0.1" id="healthWeight" placeholder="e.g. 58.4" />
+              </div>
+              <div>
+                <label style="font-size:0.72rem; color:var(--text-muted);">Daily Steps:</label>
+                <input type="number" id="healthSteps" placeholder="e.g. 12500" />
+              </div>
+              <div>
+                <label style="font-size:0.72rem; color:var(--text-muted);">Active Cal Burned:</label>
+                <input type="number" id="healthActiveCal" placeholder="e.g. 550" />
+              </div>
+              <div>
+                <label style="font-size:0.72rem; color:var(--text-muted);">Water Intake (L):</label>
+                <input type="number" step="0.5" id="healthWater" placeholder="e.g. 3.0" />
+              </div>
+            </div>
+            <textarea class="day-notes" id="healthNotes" placeholder="Gym lift logs, swimming laps, or energy notes..."></textarea>
+          </div>
+
+          <div class="life-card">
+            <div class="card-head">
+              <span>💳 Monthly Expense & Finance Ledger</span>
+              <span id="totalSpend" style="font-size:0.75rem; color:var(--warning);">Total: ₹0</span>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="expenseDesc" placeholder="Item (e.g. Gym, Books, Groceries)" style="flex:2;" />
+              <input type="number" id="expenseAmount" placeholder="₹ Amount" style="flex:1;" />
+              <button class="btn-primary" id="addExpenseBtn" style="white-space:nowrap;">+ Add</button>
+            </div>
+            <div id="expenseList" style="max-height:140px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: STUDY OS -->
+      <section id="viewStudy" class="tab-view">
+        <div class="resource-dock">
+          <div class="dock-title">
+            <span>📌 Primary Portals & Playlists · 💡 Drag & Drop tasks between day cards!</span>
+            <span id="countdownBanner" style="color:var(--exam);"></span>
+          </div>
+          <div class="dock-links">
+            <a class="dock-pill" href="https://youtube.com/playlist?list=PLgUwDviBIf0oF6QL8m22w1hIDC1vJ_BHz" target="_blank">🔥 Striver DSA Playlist</a>
+            <a class="dock-pill" href="https://youtube.com/playlist?list=PL6W8uoQQ2c63f469AyV78np0rbxRFppkx" target="_blank">☕ Java Refresher Playlist</a>
+            <a class="dock-pill" href="https://youtu.be/D74el9mvNak" target="_blank">🤖 Agentic AI Crash Course (Codebasics)</a>
+            <a class="dock-pill" href="https://youtu.be/rV3HJ4LEZ7k" target="_blank">🧠 Complete Agentic AI (Krish Naik 10.5h)</a>
+            <a class="dock-pill" href="https://youtube.com/playlist?list=PLAqhIrjkxbuWI23v9cThsA9GvCAUhRvKZ" target="_blank">🔬 Karpathy Zero-to-Hero</a>
+            <a class="dock-pill" href="https://portal.mlu.aws.dev/course-catalog/" target="_blank">☁️ AWS MLU Catalog</a>
+            <a class="dock-pill" href="https://youtu.be/TtPXvEcE11E" target="_blank">⚛️ React Full Course (freeCodeCamp)</a>
+            <a class="dock-pill" href="https://youtu.be/TAKDIvvUdc4" target="_blank">🛠️ Claude Code Crash Course</a>
+            <a class="dock-pill" href="https://youtube.com/playlist?list=PLQnljOFTspQUNnO4p00ua_C5mKTfldiYT" target="_blank">🌐 @hnasr Backend Beginner</a>
+            <a class="dock-pill" href="https://youtube.com/playlist?list=PLQnljOFTspQWGuRmwojJ6LiV0ejm6eOcs" target="_blank">🌐 @hnasr Backend Intermediate</a>
+            <a class="dock-pill" href="https://youtube.com/playlist?list=PLQnljOFTspQUybacGRk1b_p13dgI-SmcZ" target="_blank">🌐 @hnasr Backend Advanced</a>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">168-Day Study Progress</div>
+            <div class="stat-value"><span id="completedCount">0</span> / <span id="totalDaysCount">168</span> (<span id="completedPct">0%</span>)</div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" id="mainProgressBar"></div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Striver DSA (Oct 24 – Dec 14)</div>
+            <div class="stat-value" style="color:var(--dsa);"><span id="dsaDoneCount">0</span> / 52 Days</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);">1.5–2.5h daily @ 1.5x with Notes</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">IITM Exam Buffer Readiness</div>
+            <div class="stat-value" style="color:var(--exam);"><span id="iitmDoneCount">0</span> Blocks</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);">Quiz 1 (Nov 15) · Quiz 2 (Dec 5) · End (Jan 10)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Active Habit Streak</div>
+            <div class="stat-value">🔥 <span id="streakVal">0</span> Days</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);">Total Hours Logged: <strong id="hoursLogged">0</strong>h</div>
+          </div>
+        </div>
+
+        <div class="controls-bar">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <select id="monthFilter">
+              <option value="all">All 6 Months (Weeks 1–24)</option>
+              <option value="1">Month 1 (W1–W4): Striver DSA + Java Refresher + Agentic Crash + Quiz 1</option>
+              <option value="2">Month 2 (W5–W8): Striver Trees/Graphs/DP + 10.5h Agentic AI + Quiz 2</option>
+              <option value="3">Month 3 (W9–W12): Karpathy Zero-to-Hero + IITM End-Term Blitz (Jan 10)</option>
+              <option value="4">Month 4 (W13–W16): Hussein Nasser Backend Sequences + AWS MLU</option>
+              <option value="5">Month 5 (W17–W20): Krish Naik 54h Complete GenAI (at 1.5x) + LLD/HLD 38.5h</option>
+              <option value="6">Month 6 (W21–W24): React Masterclass + Claude Code + Capstones</option>
+            </select>
+            <select id="statusFilter">
+              <option value="all">All Days</option>
+              <option value="todo">Remaining Days</option>
+              <option value="done">Completed Days</option>
+              <option value="iitm">IITM Exam Buffer Days</option>
+              <option value="weekend">Weekends Only</option>
+            </select>
+            <input type="text" id="searchInput" placeholder="Search (e.g. Striver, Karpathy, hnasr, React)..." style="min-width:240px;" />
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button id="jumpTodayBtn" class="btn-primary">📅 Jump to Today</button>
+            <button id="jumpNextBtn">🎯 Next Unfinished</button>
+          </div>
+        </div>
+
+        <div class="week-pills" id="weekPills"></div>
+        <div class="days-grid" id="daysGrid"></div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // HARDCODED FIREBASE CONFIGURATION
+    const firebaseConfig = {
+      apiKey: "AIzaSyAXjkctgK2VcL6YDUVxarCXVBmu3cuNBBY",
+      authDomain: "ruchira-master-os.firebaseapp.com",
+      projectId: "ruchira-master-os",
+      storageBucket: "ruchira-master-os.firebasestorage.app",
+      messagingSenderId: "55245459502",
+      appId: "1:55245459502:web:9b23d3e9e571ec9d654fbf"
+    };
+
+    let auth = null;
+    let db = null;
+    let currentUser = null;
+
+    try {
+      firebase.initializeApp(firebaseConfig);
+      auth = firebase.auth();
+      db = firebase.firestore();
+    } catch (err) {
+      console.warn("Firebase initialization notice:", err);
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-view").forEach(v => v.classList.remove("active"));
+      if (tab === "life") {
+        document.getElementById("tabBtnLife").classList.add("active");
+        document.getElementById("viewLife").classList.add("active");
+      } else {
+        document.getElementById("tabBtnStudy").classList.add("active");
+        document.getElementById("viewStudy").classList.add("active");
+      }
+    }
+
+    const STORAGE_KEY = "ruchira_master_os_unified_v3";
+    let state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
+      habits: {},
+      health: { weight: "", steps: "", activeCal: "", water: "", notes: "" },
+      expenses: [],
+      completedDays: {},
+      completedBlocks: {},
+      dayBlocks: {},
+      notes: {},
+      customDays: [],
+      freezesLeft: 5,
+      frozenDays: {},
+      selectedWeek: 1,
+      theme: "dark"
+    };
+
+    function applyTheme() {
+      document.documentElement.setAttribute("data-theme", state.theme || "dark");
+    }
+
+    function setSyncStatus(status, text) {
+      const dot = document.getElementById("syncDot");
+      const txt = document.getElementById("syncStatusText");
+      if (dot) dot.className = "sync-dot " + status;
+      if (txt) txt.textContent = text;
+    }
+
+    let cloudSyncDebounce = null;
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      updateStats();
+      renderWeekPills();
+
+      if (currentUser && db) {
+        setSyncStatus("syncing", "Syncing to Cloud...");
+        clearTimeout(cloudSyncDebounce);
+        cloudSyncDebounce = setTimeout(async () => {
+          try {
+            await db.collection("users").doc(currentUser.uid).set({
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+              data: state
+            });
+            setSyncStatus("synced", `Synced (${currentUser.displayName || currentUser.email.split('@')[0]})`);
+          } catch (e) {
+            setSyncStatus("offline", "Sync Failed");
+          }
+        }, 1200);
+      }
+    }
+
+    // --- CURRICULUM DEFINITIONS ---
+    const striverTopics = [
+      "Step 1: Learn the Basics, Patterns & Time Complexity", "Step 1: Basic Maths, Recursion & Hashing Notes",
+      "Step 2: Sorting Techniques (Merge, Quick, Recursive Bubble)", "Step 3.1: Arrays Easy (2nd Largest, Rotate, Union, Missing Num)",
+      "Step 3.1: Arrays Easy (Max Consecutive 1s, Longest Subarray +K)", "Step 3.2: Arrays Medium (2Sum, Sort 0/1/2, Kadane's Algorithm)",
+      "Step 3.2: Arrays Medium (Stock Buy/Sell, Rearrange by Sign, Next Permutation)", "Step 3.2: Arrays Medium (Leaders, Longest Consecutive Sequence, Set Matrix Zeroes)",
+      "Step 3.2: Arrays Medium (Rotate Matrix 90, Spiral Matrix, Count Subarrays Sum K)", "Step 3.3: Arrays Hard (Pascal Triangle, Majority Element II, 3Sum, 4Sum)",
+      "Step 3.3: Arrays Hard (Merge Overlapping Intervals, Merge Sorted Arrays, Count Inversions)", "Step 3.3: Arrays Hard (Reverse Pairs, Max Product Subarray, Missing & Repeating)",
+      "Step 4.1: Binary Search 1D (Lower/Upper Bound, Search Rotated Array I & II)", "Step 4.1: Binary Search 1D (Min in Rotated Array, Peak Element, Single Element)",
+      "Step 4.2: BS on Answers (Sqrt, Nth Root, Koko Eating Bananas, M Bouquets)", "Step 4.2: BS on Answers (Aggressive Cows, Book Allocation, Split Array Largest Sum)",
+      "Step 4.2: BS on Answers (Median of 2 Sorted Arrays, Kth Element, 2D Matrix BS)", "Step 5: Strings Medium/Hard (Reverse Words, Longest Palindrome, Roman to Int, Atoi)",
+      "Step 6.1: Linked List 1D & Doubly LL (Reverse, Middle, Loop Detection, Length of Loop)", "Step 6.3: LL Medium (Palindrome LL, Odd-Even, Remove Nth Node, Sort LL, Intersection)",
+      "Step 6.4: LL Hard (Reverse in K-Group, Rotate LL, Flatten LL, Clone LL with Random Ptr)", "Step 7.1: Recursion & Subsequences (Generate Parentheses, Power Set, Combination Sum I & II)",
+      "Step 7.2: Backtracking Hard (Subset Sum, N-Queens, Sudoku Solver, Rat in Maze, Word Search)", "Step 8: Bit Manipulation & Interview Tricks (XOR Range, Single Number III, Power Set)",
+      "Step 9.1: Stacks & Queues (Next Greater Element, Next Smaller, Trapping Rainwater)", "Step 9.2: Monotonic Stack (Sum of Subarray Minimums, Asteroid Collision, Largest Rectangle Histogram)",
+      "Step 9.3: Stack Implementation Hard (Sliding Window Maximum, Stock Span, LRU & LFU Cache)", "Step 10.1: Sliding Window & Two Pointers (Longest Substring No Repeat, Max Consecutive Ones III)",
+      "Step 10.2: Sliding Window Hard (Fruit Into Baskets, Binary Subarray Sum, Subarrays with K Distinct)", "Step 11: Heaps / Priority Queue (Kth Largest, Merge K Sorted Lists, Task Scheduler, Median Stream)",
+      "Step 12: Greedy Algorithms (N Meetings, Jump Game I & II, Min Platforms, Job Sequencing, Candy)", "Step 13.1: Binary Trees Traversals (Pre/In/Post Iterative, Level Order, ZigZag, Boundary Traversal)",
+      "Step 13.2: Binary Trees Medium (Height, Diameter, Max Path Sum, Vertical Order, Top/Bottom View)", "Step 13.3: Binary Trees Hard (LCA, Max Width, Children Sum, Nodes at Distance K, Burn Tree)",
+      "Step 13.3: Binary Trees Hard (Count Complete Tree Nodes, Construct from Inorder+Preorder, Serialize)", "Step 14.1: Binary Search Trees (Search, Ceil/Floor, Insert/Delete, Kth Smallest, Validate BST)",
+      "Step 14.2: BST Hard (LCA in BST, Construct from Preorder, BST Iterator, Two Sum in BST, Recover BST)", "Step 15.1: Graphs BFS & DFS (Connected Components, Rotten Oranges, Flood Fill, Cycle Detection Undirected)",
+      "Step 15.2: Graphs Grid & Bipartite (0/1 Matrix, Surrounded Regions, Number of Enclaves, Word Ladder I & II)", "Step 15.3: Topological Sort & Kahn's Algorithm (Cycle in Directed Graph, Course Schedule I & II, Alien Dict)",
+      "Step 15.4: Shortest Path in Graphs (Dijkstra Priority Queue, Shortest Path in Binary Maze, Path Min Effort)", "Step 15.4: Shortest Path Advanced (Cheapest Flights K Stops, Bellman-Ford, Floyd Warshall, City Threshold)",
+      "Step 15.5: Minimum Spanning Tree & Disjoint Set (Prim's, Kruskal's, Union by Rank/Size, Accounts Merge)", "Step 15.6: Advanced Graphs (Number of Islands II, Making a Large Island, Bridges in Graph Tarjan's, Kosaraju)",
+      "Step 16.1: Dynamic Programming 1D (Climbing Stairs, Frog Jump K, House Robber I & II)", "Step 16.2: DP on Grids (Ninja's Training, Unique Paths I & II, Min Path Sum, Triangle, Cherry Pickup II)",
+      "Step 16.3: DP on Subsequences (Subset Sum Equal K, Partition Equal Subset, Target Sum, Coin Change I & II)", "Step 16.4: DP on Strings (Longest Common Subsequence, Longest Palindromic Subseq, Edit Distance, Wildcard)",
+      "Step 16.5: DP on Stocks (Best Time Buy/Sell II, III, IV, with Cooldown, with Transaction Fee)", "Step 16.6: Longest Increasing Subsequence (LIS Binary Search, Largest Divisible Subset, Longest String Chain)",
+      "Step 16.7: MCM & Partition DP (Matrix Chain Multiplication, Burst Balloons, Palindrome Partitioning II)", "Step 17: Tries & Final Striver Revision (Implement Trie II, Max XOR of Two Numbers, Offline Queries)"
+    ];
+
+    const hnasrSyllabus = [
+      { title: "How to Become a Good Backend Engineer (Fundamentals)", pl: "Beginner", url: "https://youtube.com/playlist?list=PLQnljOFTspQUNnO4p00ua_C5mKTfldiYT" },
+      { title: "Advice for Beginner Backend Engineers in Software Companies", pl: "Beginner", url: "https://youtube.com/playlist?list=PLQnljOFTspQUNnO4p00ua_C5mKTfldiYT" },
+      { title: "The OSI Model - Explained by Example", pl: "Beginner", url: "https://youtube.com/playlist?list=PLQnljOFTspQUNnO4p00ua_C5mKTfldiYT" },
+      { title: "The OSI Model by Example - Backend Engineering Show", pl: "Beginner", url: "https://youtube.com/playlist?list=PLQnljOFTspQUNnO4p00ua_C5mKTfldiYT" },
+      { title: "TCP vs UDP Crash Course", pl: "Beginner", url: "https://youtube.com/playlist?list=PLQnljOFTspQUNnO4p00ua_C5mKTfldiYT" },
+      { title: "Hyper Text Transfer Protocol Crash Course - HTTP 1.0, 1.1, HTTP/2, HTTP/3", pl: "Beginner", url: "https://youtube.com/playlist?list=PLQnljOFTspQUNnO4p00ua_C5mKTfldiYT" },
+      { title: "What Are Web Servers and How Do They Work (httpd and nodejs)", pl: "Beginner", url: "https://youtube.com/playlist?list=PLQnljOFTspQUNnO4p00ua_C5mKTfldiYT" },
+      { title: "Symmetrical vs Asymmetrical Encryption Pros and Cons by Example", pl: "Beginner", url: "https://youtube.com/playlist?list=PLQnljOFTspQUNnO4p00ua_C5mKTfldiYT" },
+      { title: "Transport Layer Security, TLS 1.2 and 1.3 (Explained by Example)", pl: "Beginner", url: "https://youtube.com/playlist?list=PLQnljOFTspQUNnO4p00ua_C5mKTfldiYT" },
+      { title: "Proxy vs Reverse Proxy Server Explained", pl: "Beginner", url: "https://youtube.com/playlist?list=PLQnljOFTspQUNnO4p00ua_C5mKTfldiYT" },
+      { title: "I Ask This Question to Every Backend Engineer I Interview", pl: "Beginner", url: "https://youtube.com/playlist?list=PLQnljOFTspQUNnO4p00ua_C5mKTfldiYT" },
+      { title: "Primary Key vs Secondary Key - What You Probably Didn't Know", pl: "Beginner", url: "https://youtube.com/playlist?list=PLQnljOFTspQUNnO4p00ua_C5mKTfldiYT" },
+      { title: "B-Tree vs B+Tree in Production Database Systems", pl: "Beginner", url: "https://youtube.com/playlist?list=PLQnljOFTspQUNnO4p00ua_C5mKTfldiYT" },
+      { title: "My Process of Designing and Architecting Software", pl: "Beginner", url: "https://youtube.com/playlist?list=PLQnljOFTspQUNnO4p00ua_C5mKTfldiYT" },
+      { title: "Asynchronous vs Multithreading and Multiprocessing Programming", pl: "Beginner", url: "https://youtube.com/playlist?list=PLQnljOFTspQUNnO4p00ua_C5mKTfldiYT" },
+      { title: "XMPP - Extensible Messaging and Presence Protocol (Node JS & eJabberd)", pl: "Beginner", url: "https://youtube.com/playlist?list=PLQnljOFTspQUNnO4p00ua_C5mKTfldiYT" },
+      { title: "Percentile Tail Latency Explained (95%, 99%) Monitor Backend Performance", pl: "Beginner", url: "https://youtube.com/playlist?list=PLQnljOFTspQUNnO4p00ua_C5mKTfldiYT" },
+      { title: "Load Balancing Server-Sent Events (SSE) Backends with Round Robin", pl: "Beginner", url: "https://youtube.com/playlist?list=PLQnljOFTspQUNnO4p00ua_C5mKTfldiYT" },
+      { title: "Building an Upload Backend Service with Vanilla JS Progress", pl: "Beginner", url: "https://youtube.com/playlist?list=PLQnljOFTspQUNnO4p00ua_C5mKTfldiYT" },
+      { title: "Backend Leaking Postgres Database Connections - How to Fix It", pl: "Beginner", url: "https://youtube.com/playlist?list=PLQnljOFTspQUNnO4p00ua_C5mKTfldiYT" },
+      { title: "What is the TCP 3-Way Handshake and Why Backend Engineers Should Understand It", pl: "Intermediate", url: "https://youtube.com/playlist?list=PLQnljOFTspQWGuRmwojJ6LiV0ejm6eOcs" },
+      { title: "Layer 4 vs Layer 7 Proxying in Details Explained with Examples", pl: "Intermediate", url: "https://youtube.com/playlist?list=PLQnljOFTspQWGuRmwojJ6LiV0ejm6eOcs" },
+      { title: "Database Engines Crash Course (MyISAM, Aria, InnoDB, XtraDB, LevelDB, RocksDB)", pl: "Intermediate", url: "https://youtube.com/playlist?list=PLQnljOFTspQWGuRmwojJ6LiV0ejm6eOcs" },
+      { title: "Enable HTTP/2 and TLS 1.3 on Apache Tomcat with Let's Encrypt", pl: "Intermediate", url: "https://youtube.com/playlist?list=PLQnljOFTspQWGuRmwojJ6LiV0ejm6eOcs" },
+      { title: "HTTP/2 Critical Limitation that Led to HTTP/3 & QUIC", pl: "Intermediate", url: "https://youtube.com/playlist?list=PLQnljOFTspQWGuRmwojJ6LiV0ejm6eOcs" },
+      { title: "When Indexes Are Useless | The Backend Engineering Show", pl: "Intermediate", url: "https://youtube.com/playlist?list=PLQnljOFTspQWGuRmwojJ6LiV0ejm6eOcs" },
+      { title: "Partial Indexing | The Backend Engineering Show", pl: "Intermediate", url: "https://youtube.com/playlist?list=PLQnljOFTspQWGuRmwojJ6LiV0ejm6eOcs" },
+      { title: "The Cost of Hash Tables | The Backend Engineering Show", pl: "Intermediate", url: "https://youtube.com/playlist?list=PLQnljOFTspQWGuRmwojJ6LiV0ejm6eOcs" },
+      { title: "A Deep Dive into How Slow SELECT * Is", pl: "Intermediate", url: "https://youtube.com/playlist?list=PLQnljOFTspQWGuRmwojJ6LiV0ejm6eOcs" },
+      { title: "Column vs Row Oriented Databases Explained", pl: "Intermediate", url: "https://youtube.com/playlist?list=PLQnljOFTspQWGuRmwojJ6LiV0ejm6eOcs" },
+      { title: "They Enabled Postgres Partitioning and Their Backend Fell Apart", pl: "Intermediate", url: "https://youtube.com/playlist?list=PLQnljOFTspQWGuRmwojJ6LiV0ejm6eOcs" },
+      { title: "When Should You Shard Your Database?", pl: "Intermediate", url: "https://youtube.com/playlist?list=PLQnljOFTspQWGuRmwojJ6LiV0ejm6eOcs" },
+      { title: "Database Replication Crash Course (with Postgres 13)", pl: "Advanced", url: "https://youtube.com/playlist?list=PLQnljOFTspQUybacGRk1b_p13dgI-SmcZ" },
+      { title: "How Database Cursors Help in Fetching Large Result Sets from SQL", pl: "Advanced", url: "https://youtube.com/playlist?list=PLQnljOFTspQUybacGRk1b_p13dgI-SmcZ" },
+      { title: "Relational Database ACID Transactions (Explained by Example)", pl: "Advanced", url: "https://youtube.com/playlist?list=PLQnljOFTspQUybacGRk1b_p13dgI-SmcZ" },
+      { title: "Key vs Non-Key Column Database Indexing", pl: "Advanced", url: "https://youtube.com/playlist?list=PLQnljOFTspQUybacGRk1b_p13dgI-SmcZ" },
+      { title: "Port Forwarding with NAT and iptables (Transparent Proxying)", pl: "Advanced", url: "https://youtube.com/playlist?list=PLQnljOFTspQUybacGRk1b_p13dgI-SmcZ" },
+      { title: "Load Balancing in Layer 4 vs Layer 7 with HAProxy Examples", pl: "Advanced", url: "https://youtube.com/playlist?list=PLQnljOFTspQUybacGRk1b_p13dgI-SmcZ" },
+      { title: "WebSockets Crash Course - Handshake, Use-cases, Pros & Cons", pl: "Advanced", url: "https://youtube.com/playlist?list=PLQnljOFTspQUybacGRk1b_p13dgI-SmcZ" },
+      { title: "Scaling WebSockets with Redis, HAProxy & Node JS", pl: "Advanced", url: "https://youtube.com/playlist?list=PLQnljOFTspQUybacGRk1b_p13dgI-SmcZ" },
+      { title: "RabbitMQ Crash Course & Message Broker Architecture", pl: "Advanced", url: "https://youtube.com/playlist?list=PLQnljOFTspQUybacGRk1b_p13dgI-SmcZ" },
+      { title: "Kafka Architecture & Streaming Log Internals", pl: "Advanced", url: "https://youtube.com/playlist?list=PLQnljOFTspQUybacGRk1b_p13dgI-SmcZ" }
+    ];
+
+    const startDate = new Date(2026, 9, 24); // Sat, Oct 24, 2026
+    const quiz1Date = new Date(2026, 10, 15);
+    const quiz2Date = new Date(2026, 11, 5);
+    const endTermDate = new Date(2027, 0, 10);
+
+    const baseDays = [];
+
+    for (let i = 0; i < 168; i++) {
+      const dayNum = i + 1;
+      const currDate = new Date(startDate);
+      currDate.setDate(startDate.getDate() + i);
+
+      const weekNum = Math.floor(i / 7) + 1;
+      const monthNum = Math.ceil(weekNum / 4);
+      const dayOfWeek = currDate.getDay();
+      const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+      const dateStr = currDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+      const dayName = currDate.toLocaleDateString("en-US", { weekday: "short" });
+      const isoDate = currDate.toISOString().split("T")[0];
+
+      let block1 = {};
+      if (i < 52) {
+        block1 = {
+          id: `b_dsa_${dayNum}`,
+          tag: "Striver DSA",
+          cls: "lbl-dsa",
+          text: `${isWeekend ? "[2.5–3h Deep Weekend Practice]" : "[1.5–2h @ 1.5x with Notes]"} ${striverTopics[i]} (<a href="https://youtube.com/playlist?list=PLgUwDviBIf0oF6QL8m22w1hIDC1vJ_BHz" target="_blank">Striver Playlist ↗</a>)`
+        };
+      } else if (i < 94) {
+        const hIdx = i - 52;
+        const item = hnasrSyllabus[hIdx % hnasrSyllabus.length];
+        block1 = {
+          id: `b_hnasr_${dayNum}`,
+          tag: `@hnasr (${item.pl})`,
+          cls: "lbl-sys",
+          text: `[90m Morning Block] <strong>${item.title}</strong> (<a href="${item.url}" target="_blank">${item.pl} Playlist ↗</a>)`
+        };
+      } else {
+        const sysModules = [
+          "HLD: Requirements Clarification, Capacity Estimations & High-Level Block Diagrams",
+          "HLD: Relational vs NoSQL Storage, Sharding Keys & Consistent Hashing Rings",
+          "HLD: Caching Layers (Redis/Memcached), Invalidation Strategies & CDN Edge Networks",
+          "HLD: Scalable Messaging Queues, Kafka Partitioning & Event-Driven Decoupling",
+          "HLD: Rate Limiting, API Gateways, Reverse Proxies & Microservice Mesh",
+          "LLD: SOLID Design Principles, Interface Segregation & Clean Architecture",
+          "LLD: Creational Patterns (Factory Method, Abstract Factory, Builder, Singleton)",
+          "LLD: Structural Patterns (Adapter, Decorator, Facade, Composite, Proxy)",
+          "LLD: Behavioral Patterns (Strategy, Observer, Command, State, Chain of Responsibility)",
+          "LLD: Object-Oriented Schema Modeling (Parking Lot, Elevator System, Rate Limiter)",
+          "LLD: Concurrency & Thread-Safe Design in Java/Python (Locks, Semaphores, Pools)",
+          "HLD Case Studies: Designing Distributed Key-Value Store, TinyURL & Notification Service",
+          "HLD Case Studies: Designing Video Streaming Architecture (Netflix/YouTube CDN Pipeline)",
+          "HLD Case Studies: Designing High-Scale E-Commerce Inventory & Flash Sale Architecture"
+        ];
+        const sIdx = Math.floor((i - 94) / 5) % sysModules.length;
+        block1 = {
+          id: `b_sys_${dayNum}`,
+          tag: "System Design (LLD+HLD)",
+          cls: "lbl-sys",
+          text: `[90m Morning Block] Udemy 38.5h Course @ 1.5x: ${sysModules[sIdx]}`
+        };
+      }
+
+      let block2 = {};
+      let isExamBuffer = false;
+      let isExamDay = false;
+      let examBadge = "";
+
+      if (isoDate === "2026-11-15") {
+        isExamDay = true; isExamBuffer = true; examBadge = "🎯 QUIZ 1 TODAY";
+        block2 = { id: `b_iitm_${dayNum}`, tag: "IITM EXAM DAY", cls: "lbl-iitm", text: "<strong>QUIZ 1 (Nov 15):</strong> Deep Learning, AI & Corporate Finance. Full exam focus!" };
+      } else if (isoDate === "2026-12-05") {
+        isExamDay = true; isExamBuffer = true; examBadge = "🎯 QUIZ 2 TODAY";
+        block2 = { id: `b_iitm_${dayNum}`, tag: "IITM EXAM DAY", cls: "lbl-iitm", text: "<strong>QUIZ 2 (Dec 5):</strong> Deep Learning, AI & Corporate Finance. Full exam focus!" };
+      } else if (isoDate === "2027-01-10") {
+        isExamDay = true; isExamBuffer = true; examBadge = "🎓 END-TERM TODAY";
+        block2 = { id: `b_iitm_${dayNum}`, tag: "IITM EXAM DAY", cls: "lbl-iitm", text: "<strong>END-TERM EXAMS (Jan 10, 2027):</strong> Final Semester Examinations!" };
+      } else if (currDate < quiz1Date) {
+        isExamBuffer = true; examBadge = "📚 Quiz 1 Buffer";
+        const subj = ["Deep Learning (Backpropagation, Optimization, Convolutions)", "Artificial Intelligence (A* Search, CSP, Logic & Games)", "Corporate Finance (Time Value of Money, Bond & Stock Valuation, NPV)"][i % 3];
+        block2 = { id: `b_iitm_${dayNum}`, tag: "IITM Quiz 1 Prep", cls: "lbl-iitm", text: `[1.5h Post-Standup Conf Room Block] <strong>${subj}</strong> — Lecture notes & mock problem sets.` };
+      } else if (currDate < quiz2Date) {
+        isExamBuffer = true; examBadge = "📚 Quiz 2 Buffer";
+        const subj = ["Deep Learning (RNNs, LSTMs, Attention Mechanisms)", "Artificial Intelligence (Bayesian Networks, MDPs, Reinforcement Learning)", "Corporate Finance (CAPM, Risk-Return, Capital Budgeting, WACC)"][i % 3];
+        block2 = { id: `b_iitm_${dayNum}`, tag: "IITM Quiz 2 Prep", cls: "lbl-iitm", text: `[1.5h Post-Standup Conf Room Block] <strong>${subj}</strong> — Numerical derivations & past year papers.` };
+      } else if (currDate < endTermDate) {
+        isExamBuffer = (i >= 57);
+        examBadge = isExamBuffer ? "🔥 End-Term 3-Wk Blitz" : "📘 IITM Coursework";
+        const subj = ["Deep Learning End-Term Comprehensive Revision", "Artificial Intelligence End-Term Theory & Proofs", "Corporate Finance Complete Formula & Case Study Blitz"][i % 3];
+        block2 = { id: `b_iitm_${dayNum}`, tag: isExamBuffer ? "IITM End-Term Blitz" : "IITM Coursework", cls: "lbl-iitm", text: `[${isExamBuffer ? "2h Conf Room Exam Block" : "1h Study Block"}] <strong>${subj}</strong>.` };
+      } else {
+        block2 = {
+          id: `b_iitm_${dayNum}`,
+          tag: "AWS MLU & IITM Term",
+          cls: "lbl-iitm",
+          text: `[1h Study Block] Complete modules from <a href="https://portal.mlu.aws.dev/course-catalog/" target="_blank">AWS MLU Course Catalog ↗</a> + Next IITM Semester Lectures.`
+        };
+      }
+
+      let block3 = {};
+      if (i < 10) {
+        block3 = {
+          id: `b_genai_${dayNum}`,
+          tag: `Java Refresher (Day ${i + 1}/10)`,
+          cls: "lbl-genai",
+          text: `[1h actual @ 2x] Complete Day ${i + 1} of <a href="https://youtube.com/playlist?list=PL6W8uoQQ2c63f469AyV78np0rbxRFppkx" target="_blank">Java Refresher Playlist ↗</a> + OOP/Memory notes.`
+        };
+      } else if (i >= 10 && i < 14) {
+        block3 = {
+          id: `b_genai_${dayNum}`,
+          tag: "Agentic AI Crash Course",
+          cls: "lbl-genai",
+          text: `[Code + Notes] <a href="https://youtu.be/D74el9mvNak" target="_blank">Codebasics Agentic AI Crash Course ↗</a>: Build Rufus Multimodal Shopping Agent & Telecom RAG.`
+        };
+      } else if (i >= 14 && i < 22) {
+        block3 = {
+          id: `b_genai_${dayNum}`,
+          tag: "IITM Quiz 1 Protection",
+          cls: "lbl-iitm",
+          text: `Light GenAI review only — prioritize energy for IITM Quiz 1 (Deep Learning, AI, Finance).`
+        };
+      } else if (i >= 22 && i < 42) {
+        const agenticUnits = [
+          "LangChain v1 Architecture, uv Package Manager & Basic Agent Loops",
+          "Multi-Model Providers (OpenAI, Gemini, Groq), Async Streaming & Structured Outputs",
+          "LangChain Middlewares: Summarization Middleware & Token/Fraction Triggers",
+          "Human-in-the-Loop Middleware: Interrupts, Approvals & Rejections",
+          "Complete LangGraph Crash Course: StateGraph, Nodes & Conditional Edges",
+          "LangGraph ReAct Loop, Multi-Tool Integration & Persistent Memory Checkpointers",
+          "Building Custom MCP Servers (FastMCP, stdio vs Streamable HTTP) & Multi-Server Clients",
+          "Production Modular RAG: Data Ingestion, Chunking Strategies & FAISS/Chroma Persistence",
+          "Vectorless RAG (PageIndex): Reasoning Trees vs Traditional Chunking",
+          "Deep Agents Architecture: Planning, Sub-agents & File Systems",
+          "AI Guardrails: PII Middleware, Custom Before/After Hooks & Prompt Injection Defense",
+          "LLM Evaluations: LangSmith Evals, LLM-as-a-Judge & RAG Triad Metrics",
+          "LLM Gateways: LiteLLM, Fallbacks, Caching, Load Balancing & Semantic Routing"
+        ];
+        const aIdx = (i - 22) % agenticUnits.length;
+        block3 = {
+          id: `b_genai_${dayNum}`,
+          tag: "10.5h Agentic AI Course",
+          cls: "lbl-genai",
+          text: `[45m–1h + Notes] ${agenticUnits[aIdx]} (<a href="https://youtu.be/rV3HJ4LEZ7k" target="_blank">10.5h Course ↗</a>)`
+        };
+      } else if (i >= 42 && i < 64) {
+        const kTopics = [
+          "Micrograd: Building Backpropagation & Autograd Engine from Scratch in Python",
+          "Makemore Part 1: Bigram Language Model, PyTorch Tensors & Negative Log Likelihood",
+          "Makemore Part 2: MLP (Bengio et al.) Architecture, Embedding Tables & Learning Rates",
+          "Makemore Part 3: Activations, Gradients & Batch Normalization Deep Dive",
+          "Makemore Part 4: Becoming a Backprop Ninja (Writing Manual Backward Pass by Hand)",
+          "Makemore Part 5: Building WaveNet Hierarchical Dilated Convolutions",
+          "Let's Build GPT from Scratch: Self-Attention, Multi-Head Attention & Transformer Blocks",
+          "Let's Build the GPT Tokenizer: Byte-Pair Encoding (BPE) & tiktoken Mechanics"
+        ];
+        block3 = {
+          id: `b_genai_${dayNum}`,
+          tag: "Karpathy Zero-to-Hero",
+          cls: "lbl-genai",
+          text: `${kTopics[(i - 42) % kTopics.length]} (<a href="https://youtube.com/playlist?list=PLAqhIrjkxbuWI23v9cThsA9GvCAUhRvKZ" target="_blank">Karpathy Playlist ↗</a>)`
+        };
+      } else if (i >= 64 && i < 78) {
+        block3 = {
+          id: `b_genai_${dayNum}`,
+          tag: "End-Term Intensive Sprint",
+          cls: "lbl-iitm",
+          text: `Dedicated evening exam block for IITM Deep Learning, AI & Corporate Finance End-Term Preparation.`
+        };
+      } else if (i >= 78 && i < 128) {
+        const genaiUdemyUnits = [
+          "Python Advanced Refresher, Asyncio & Environment Toolchains for GenAI",
+          "OpenAI API, Claude API & Hugging Face Transformers Deep Dive",
+          "LangChain v1 Components, Prompts, Chains & Memory Architectures",
+          "Vector Databases: Pinecone, Qdrant, ChromaDB & Vector Search Algorithms",
+          "Advanced RAG: Hybrid Search (Dense + Sparse BM25) & Cross-Encoder Re-Ranking",
+          "Fine-Tuning LLMs: LoRA, QLoRA, PEFT & SFTTrainer with Unsloth on GPUs",
+          "LangGraph Multi-Agent Systems, Supervisors & State Machine Orchestration",
+          "LLMOps: Model Serving with vLLM, Ollama, Langfuse Tracing & Latency Monitoring",
+          "AWS Bedrock & Enterprise GenAI Deployments on Cloud Infrastructure"
+        ];
+        const gIdx = Math.floor((i - 78) / 6) % genaiUdemyUnits.length;
+        block3 = {
+          id: `b_genai_${dayNum}`,
+          tag: "Complete GenAI Udemy (54h)",
+          cls: "lbl-genai",
+          text: `[45–60m @ 1.5x] Krish Naik Udemy GenAI Course: ${genaiUdemyUnits[gIdx]}`
+        };
+      } else if (i >= 128 && i < 149) {
+        const reactUnits = [
+          "React Basics: JSX, Functional Components, Props & Rendering Lists",
+          "State Management: useState, Controlled Inputs & Form Handling",
+          "Side Effects: useEffect Lifecycle, Async Fetching & Cleanup Handlers",
+          "Advanced Hooks: useRef, useMemo, useCallback & Custom Reusable Hooks",
+          "Token Streaming UI: Consuming FastAPI Server-Sent Events (SSE) in Real-Time",
+          "Agent Visualization: Building Interactive Graph & Message History Dashboards"
+        ];
+        const rIdx = Math.floor((i - 128) / 4) % reactUnits.length;
+        block3 = {
+          id: `b_genai_${dayNum}`,
+          tag: "React Full Course",
+          cls: "lbl-genai",
+          text: `[1h Frontend Block] <a href="https://youtu.be/TtPXvEcE11E" target="_blank">React Full Course ↗</a>: ${reactUnits[rIdx]}`
+        };
+      } else if (i >= 149 && i < 154) {
+        block3 = {
+          id: `b_genai_${dayNum}`,
+          tag: "Claude Code Crash Course",
+          cls: "lbl-genai",
+          text: `[Code along] <a href="https://youtu.be/TAKDIvvUdc4" target="_blank">Claude Code Crash Course (2 hrs) ↗</a>: CLI workflows, agent teams, custom sub-agents & skills.`
+        };
+      } else {
+        block3 = {
+          id: `b_genai_${dayNum}`,
+          tag: "Capstone Portfolio Polish",
+          cls: "lbl-genai",
+          text: `Finalize React + LangGraph + LiteLLM Full-Stack AI Repositories with Docker, Excalidraw diagrams & 2-minute Loom walkthroughs.`
+        };
+      }
+
+      baseDays.push({
+        id: `day_${dayNum}`,
+        day: dayNum,
+        week: weekNum,
+        month: monthNum,
+        dateStr,
+        dayName,
+        isoDate,
+        isWeekend,
+        isExamBuffer,
+        isExamDay,
+        examBadge,
+        hours: isWeekend ? 5.5 : 3.5,
+        title: `Day ${dayNum}: ${block1.tag} · ${block3.tag}`,
+        blocks: [block1, block2, block3]
+      });
+    }
+
+    function getAllDays() {
+      const all = [...baseDays, ...(state.customDays || [])].sort((a, b) => a.day - b.day);
+      all.forEach(d => {
+        if (state.dayBlocks[d.id]) {
+          d.blocks = state.dayBlocks[d.id];
+        }
+      });
+      return all;
+    }
+
+    // --- LIFE OS RENDERERS ---
+    function renderLifeOS() {
+      document.querySelectorAll("#routineList input[type='checkbox']").forEach(cb => {
+        const habitKey = cb.getAttribute("data-habit");
+        cb.checked = !!state.habits[habitKey];
+        cb.onchange = (e) => {
+          state.habits[habitKey] = e.target.checked;
+          saveState();
+        };
+      });
+
+      const wEl = document.getElementById("healthWeight");
+      const sEl = document.getElementById("healthSteps");
+      const cEl = document.getElementById("healthActiveCal");
+      const wtEl = document.getElementById("healthWater");
+      const nEl = document.getElementById("healthNotes");
+
+      wEl.value = state.health.weight || "";
+      sEl.value = state.health.steps || "";
+      cEl.value = state.health.activeCal || "";
+      wtEl.value = state.health.water || "";
+      nEl.value = state.health.notes || "";
+
+      [wEl, sEl, cEl, wtEl].forEach(input => {
+        input.oninput = () => {
+          state.health.weight = wEl.value;
+          state.health.steps = sEl.value;
+          state.health.activeCal = cEl.value;
+          state.health.water = wtEl.value;
+          saveState();
+        };
+      });
+      nEl.oninput = () => {
+        state.health.notes = nEl.value;
+        saveState();
+      };
+
+      renderExpenses();
+    }
+
+    function renderExpenses() {
+      const list = document.getElementById("expenseList");
+      list.innerHTML = "";
+      let total = 0;
+      (state.expenses || []).forEach((item, idx) => {
+        total += Number(item.amount || 0);
+        const row = document.createElement("div");
+        row.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:4px 8px; font-size:0.78rem;";
+        row.innerHTML = `
+          <span>${item.desc}</span>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <strong style="color:var(--warning);">₹${Number(item.amount).toLocaleString()}</strong>
+            <button style="padding:2px 6px; font-size:0.68rem; color:var(--exam);" onclick="removeExpense(${idx})">✕</button>
+          </div>
+        `;
+        list.appendChild(row);
+      });
+      document.getElementById("totalSpend").textContent = `Total: ₹${total.toLocaleString()}`;
+    }
+
+    document.getElementById("addExpenseBtn").addEventListener("click", () => {
+      const desc = document.getElementById("expenseDesc").value.trim();
+      const amount = document.getElementById("expenseAmount").value.trim();
+      if (!desc || !amount) return;
+      if (!state.expenses) state.expenses = [];
+      state.expenses.push({ desc, amount: Number(amount), date: new Date().toLocaleDateString() });
+      document.getElementById("expenseDesc").value = "";
+      document.getElementById("expenseAmount").value = "";
+      renderExpenses();
+      saveState();
+    });
+
+    window.removeExpense = function(idx) {
+      state.expenses.splice(idx, 1);
+      renderExpenses();
+      saveState();
+    };
+
+    // --- STUDY OS RENDERERS ---
+    function updateStats() {
+      const all = getAllDays();
+      const doneDays = all.filter(d => state.completedDays[d.id]);
+      const count = doneDays.length;
+      const total = all.length;
+      const pct = Math.round((count / total) * 100);
+
+      document.getElementById("completedCount").textContent = count;
+      document.getElementById("totalDaysCount").textContent = total;
+      document.getElementById("completedPct").textContent = pct + "%";
+      document.getElementById("mainProgressBar").style.width = pct + "%";
+
+      let dsaDone = 0;
+      all.forEach(d => {
+        (d.blocks || []).forEach(b => {
+          if (b.tag.includes("DSA") && state.completedBlocks[b.id]) dsaDone++;
+        });
+      });
+      document.getElementById("dsaDoneCount").textContent = dsaDone;
+
+      let iitmDone = 0;
+      all.forEach(d => {
+        (d.blocks || []).forEach(b => {
+          if (b.tag.includes("IITM") && state.completedBlocks[b.id]) iitmDone++;
+        });
+      });
+      document.getElementById("iitmDoneCount").textContent = iitmDone;
+
+      let hours = 0;
+      doneDays.forEach(d => { hours += (d.hours || 3.5); });
+      document.getElementById("hoursLogged").textContent = hours.toFixed(1);
+
+      let streak = 0;
+      let maxIdx = -1;
+      for (let i = all.length - 1; i >= 0; i--) {
+        if (state.completedDays[all[i].id] || state.frozenDays[all[i].id]) {
+          maxIdx = i; break;
+        }
+      }
+      for (let i = maxIdx; i >= 0; i--) {
+        if (state.completedDays[all[i].id] || state.frozenDays[all[i].id]) streak++;
+        else break;
+      }
+      document.getElementById("streakVal").textContent = streak;
+    }
+
+    function renderWeekPills() {
+      const container = document.getElementById("weekPills");
+      container.innerHTML = "";
+
+      const allPill = document.createElement("button");
+      allPill.className = "week-pill" + (state.selectedWeek === "all" ? " active" : "");
+      allPill.textContent = "All 24 Weeks";
+      allPill.onclick = () => { state.selectedWeek = "all"; renderDays(); renderWeekPills(); };
+      container.appendChild(allPill);
+
+      const all = getAllDays();
+      for (let w = 1; w <= 24; w++) {
+        const wDays = all.filter(d => d.week === w);
+        const wDone = wDays.length > 0 && wDays.every(d => state.completedDays[d.id]);
+        const pill = document.createElement("button");
+        pill.className = "week-pill" + (state.selectedWeek === w ? " active" : "") + (wDone ? " completed-week" : "");
+        pill.textContent = `W${w}` + (wDone ? " ✓" : "");
+        pill.onclick = () => { state.selectedWeek = w; renderDays(); renderWeekPills(); };
+        container.appendChild(pill);
+      }
+    }
+
+    let draggedBlockData = null;
+
+    function renderDays() {
+      const grid = document.getElementById("daysGrid");
+      const monthVal = document.getElementById("monthFilter").value;
+      const statusVal = document.getElementById("statusFilter").value;
+      const query = document.getElementById("searchInput").value.toLowerCase().trim();
+
+      grid.innerHTML = "";
+      const all = getAllDays();
+
+      const filtered = all.filter(item => {
+        if (state.selectedWeek !== "all" && item.week !== state.selectedWeek) return false;
+        if (monthVal !== "all" && item.month !== Number(monthVal)) return false;
+        const isDone = !!state.completedDays[item.id];
+        if (statusVal === "todo" && isDone) return false;
+        if (statusVal === "done" && !isDone) return false;
+        if (statusVal === "iitm" && !item.isExamBuffer) return false;
+        if (statusVal === "weekend" && !item.isWeekend) return false;
+        if (query) {
+          const blocksText = (item.blocks || []).map(b => `${b.tag} ${b.text}`).join(" ");
+          const hay = `${item.title} ${item.dateStr} ${item.examBadge} ${blocksText}`.toLowerCase();
+          if (!hay.includes(query)) return false;
+        }
+        return true;
+      });
+
+      filtered.forEach(item => {
+        const isDone = !!state.completedDays[item.id];
+        const isFrozen = !!state.frozenDays[item.id];
+        const card = document.createElement("div");
+        card.id = `card_${item.id}`;
+        card.className = `day-card ${isDone ? "done" : ""} ${item.isExamDay ? "exam-day" : ""}`;
+
+        const blocksHtml = (item.blocks || []).map(b => {
+          const bChecked = isDone || !!state.completedBlocks[b.id];
+          return `
+            <div class="study-block" draggable="true" data-bid="${b.id}" data-dayid="${item.id}">
+              <input type="checkbox" data-bid="${b.id}" data-parent="${item.id}" ${bChecked ? "checked" : ""} />
+              <div class="block-content">
+                <div class="block-header">
+                  <span class="block-label ${b.cls}">${b.tag}</span>
+                  <span class="drag-handle" title="Drag to reorder or move to another day">⠿ drag</span>
+                </div>
+                <div>${b.text}</div>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        card.innerHTML = `
+          <div>
+            <div class="day-top">
+              <div class="day-badges">
+                <span class="tag date-tag">📅 ${item.dateStr} (${item.dayName})</span>
+                <span class="tag">Day ${item.day} · W${item.week}</span>
+                <span class="tag ${item.isWeekend ? "weekend" : ""}">${item.isWeekend ? "Weekend (~5.5h)" : "Weekday (~3.5h)"}</span>
+                ${item.examBadge ? `<span class="tag ${item.isExamDay ? "exam-tag" : "buffer-tag"}">${item.examBadge}</span>` : ""}
+                ${isFrozen ? `<span class="tag">🧊 Frozen</span>` : ""}
+              </div>
+              <label class="check-wrapper">
+                <input type="checkbox" class="master-day-check" data-id="${item.id}" ${isDone ? "checked" : ""} />
+                <span>Done</span>
+              </label>
+            </div>
+            <div class="day-title">${item.title}</div>
+            <div class="blocks-list" data-dayid="${item.id}">${blocksHtml}</div>
+          </div>
+          <textarea class="day-notes" placeholder="Log progress, notes, or GitHub link..." data-note-id="${item.id}">${state.notes[item.id] || ""}</textarea>
+        `;
+
+        card.querySelector(".master-day-check").addEventListener("change", (e) => {
+          const checked = e.target.checked;
+          state.completedDays[item.id] = checked;
+          (item.blocks || []).forEach(b => {
+            state.completedBlocks[b.id] = checked;
+          });
+          saveState();
+          renderDays();
+        });
+
+        card.querySelectorAll(".study-block input[type='checkbox']").forEach(subCheck => {
+          subCheck.addEventListener("change", (e) => {
+            const bId = e.target.getAttribute("data-bid");
+            state.completedBlocks[bId] = e.target.checked;
+            const allSubDone = (item.blocks || []).every(b => state.completedBlocks[b.id]);
+            state.completedDays[item.id] = allSubDone;
+            saveState();
+            renderDays();
+          });
+        });
+
+        const blocksList = card.querySelector(".blocks-list");
+
+        blocksList.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          blocksList.classList.add("drag-over");
+        });
+
+        blocksList.addEventListener("dragleave", () => {
+          blocksList.classList.remove("drag-over");
+        });
+
+        blocksList.addEventListener("drop", (e) => {
+          e.preventDefault();
+          blocksList.classList.remove("drag-over");
+          if (!draggedBlockData) return;
+
+          const targetDayId = item.id;
+          const sourceDayId = draggedBlockData.sourceDayId;
+          const blockToMove = draggedBlockData.block;
+
+          if (targetDayId === sourceDayId) return;
+
+          const all = getAllDays();
+          const sourceDay = all.find(d => d.id === sourceDayId);
+          const targetDay = all.find(d => d.id === targetDayId);
+
+          if (!sourceDay || !targetDay) return;
+
+          sourceDay.blocks = sourceDay.blocks.filter(b => b.id !== blockToMove.id);
+          targetDay.blocks.push(blockToMove);
+
+          state.dayBlocks[sourceDayId] = [...sourceDay.blocks];
+          state.dayBlocks[targetDayId] = [...targetDay.blocks];
+
+          draggedBlockData = null;
+          saveState();
+          renderDays();
+        });
+
+        card.querySelectorAll(".study-block").forEach(blockEl => {
+          blockEl.addEventListener("dragstart", (e) => {
+            const bId = blockEl.getAttribute("data-bid");
+            const dayId = blockEl.getAttribute("data-dayid");
+            const all = getAllDays();
+            const dayObj = all.find(d => d.id === dayId);
+            const blockObj = (dayObj ? dayObj.blocks : []).find(b => b.id === bId);
+
+            if (blockObj) {
+              draggedBlockData = { block: blockObj, sourceDayId: dayId };
+              blockEl.classList.add("dragging");
+              e.dataTransfer.setData("text/plain", bId);
+            }
+          });
+
+          blockEl.addEventListener("dragend", () => {
+            blockEl.classList.remove("dragging");
+          });
+        });
+
+        card.querySelector(".day-notes").addEventListener("input", (e) => {
+          state.notes[item.id] = e.target.value;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        });
+
+        grid.appendChild(card);
+      });
+    }
+
+    // --- AUTHENTICATION & GATEWAY LOGIC ---
+    const authGateway = document.getElementById("authGateway");
+    const appWrapper = document.getElementById("appWrapper");
+
+    function showDashboard(user) {
+      currentUser = user;
+      authGateway.style.display = "none";
+      appWrapper.style.display = "block";
+      setSyncStatus("synced", `Synced (${user.displayName || user.email.split('@')[0]})`);
+
+      applyTheme();
+      updateCountdowns();
+      renderLifeOS();
+      updateStats();
+      renderWeekPills();
+      renderDays();
+    }
+
+    function showGateway() {
+      currentUser = null;
+      authGateway.style.display = "flex";
+      appWrapper.style.display = "none";
+    }
+
+    if (auth) {
+      auth.onAuthStateChanged(async (user) => {
+        if (user) {
+          // User already logged in -> fetch state & reveal dashboard immediately
+          try {
+            const doc = await db.collection("users").doc(user.uid).get();
+            if (doc.exists && doc.data().data) {
+              state = doc.data().data;
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            }
+          } catch (err) {
+            console.error("Firestore read error:", err);
+          }
+          showDashboard(user);
+        } else {
+          showGateway();
+        }
+      });
+    }
+
+    // 1. Google Sign-In on Gateway
+    document.getElementById("gateGoogleBtn").addEventListener("click", async () => {
+      if (!auth) return alert("Firebase not initialized.");
+      const provider = new firebase.auth.GoogleAuthProvider();
+      try {
+        await auth.signInWithPopup(provider);
+      } catch (err) {
+        alert("Google Sign-In note: " + err.message);
+      }
+    });
+
+    // 2. Email/Password Sign-In / Register on Gateway
+    document.getElementById("gateLoginBtn").addEventListener("click", async () => {
+      const email = document.getElementById("gateEmail").value.trim();
+      const pass = document.getElementById("gatePassword").value.trim();
+      if (!email || !pass) return alert("Please enter both email and password.");
+      if (!auth) return alert("Firebase not initialized.");
+
+      try {
+        await auth.signInWithEmailAndPassword(email, pass);
+      } catch (err) {
+        if (err.code === "auth/user-not-found") {
+          try {
+            await auth.createUserWithEmailAndPassword(email, pass);
+            alert("Account created and signed in!");
+          } catch (createErr) {
+            alert("Sign-up error: " + createErr.message);
+          }
+        } else {
+          alert("Login error: " + err.message);
+        }
+      }
+    });
+
+    // Logout Button in Header
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      if (auth) {
+        await auth.signOut();
+      }
+    });
+
+    // Controls
+    document.getElementById("monthFilter").addEventListener("change", () => {
+      state.selectedWeek = "all";
+      renderWeekPills();
+      renderDays();
+    });
+    document.getElementById("statusFilter").addEventListener("change", renderDays);
+    document.getElementById("searchInput").addEventListener("input", () => {
+      state.selectedWeek = "all";
+      renderWeekPills();
+      renderDays();
+    });
+
+    document.getElementById("themeBtn").addEventListener("click", () => {
+      state.theme = state.theme === "dark" ? "light" : "dark";
+      applyTheme();
+      saveState();
+    });
+
+    document.getElementById("jumpTodayBtn").addEventListener("click", () => {
+      const todayIso = new Date().toISOString().split("T")[0];
+      const match = getAllDays().find(d => d.isoDate === todayIso) || getAllDays()[0];
+      state.selectedWeek = match.week;
+      renderWeekPills();
+      renderDays();
+      const el = document.getElementById(`card_${match.id}`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+
+    document.getElementById("jumpNextBtn").addEventListener("click", () => {
+      const next = getAllDays().find(d => !state.completedDays[d.id]);
+      if (!next) return;
+      state.selectedWeek = next.week;
+      renderWeekPills();
+      renderDays();
+      const el = document.getElementById(`card_${next.id}`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+
+    applyTheme();
+  </script>
+</body>
+</html>
