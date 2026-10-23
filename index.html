@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Master OS | Unified Life & GenAI Dashboard</title>
+  <title>Ruchira's Master Life & Study OS</title>
   
-  <!-- Firebase SDKs via CDN -->
+  <!-- Firebase SDKs (v10 compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -67,7 +67,7 @@
     .auth-form label { display: block; font-size: 0.76rem; color: var(--text-muted); margin: 10px 0 4px; font-weight: 700; text-transform: uppercase; }
     .auth-form input { width: 100%; padding: 10px 14px; font-size: 0.88rem; margin-bottom: 12px; }
 
-    /* APP WRAPPER (HIDDEN UNTIL AUTH) */
+    /* UNLOCKED APP CONTAINER */
     #appWrapper { display: none; }
 
     header {
@@ -89,7 +89,7 @@
     }
     .tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-    button, select, input[type="text"], input[type="password"], input[type="number"] {
+    button, select, input[type="text"], input[type="password"], input[type="number"], input[type="date"] {
       background: var(--bg); color: var(--text); border: 1px solid var(--border); padding: 7px 11px;
       border-radius: 10px; font-size: 0.8rem; cursor: pointer; transition: all 0.15s ease;
     }
@@ -112,8 +112,66 @@
     .tab-view { display: none; }
     .tab-view.active { display: block; }
 
-    /* Life OS Grid */
-    .life-grid {
+    /* ========================================================
+       TAB 1: RUCHIRA'S LIFE OS STYLES (CALENDAR + 21 HABITS)
+       ======================================================== */
+    .calendar-bar {
+      display: flex; justify-content: space-between; align-items: center; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 14px; padding: 12px 18px; margin-bottom: 14px;
+      flex-wrap: wrap; gap: 12px;
+    }
+    .date-nav-group { display: flex; align-items: center; gap: 8px; }
+    .day-pills-row { display: flex; gap: 6px; overflow-x: auto; padding: 4px 0; }
+    .cal-day-pill {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-width: 62px; padding: 8px 10px; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 10px; cursor: pointer; transition: all 0.15s ease;
+    }
+    .cal-day-pill:hover { border-color: var(--accent); }
+    .cal-day-pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .cal-day-pill .cp-day { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; }
+    .cal-day-pill .cp-num { font-size: 1.1rem; font-weight: 800; margin-top: 2px; }
+
+    .routine-header-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      padding: 18px 22px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 10px;
+    }
+    .rh-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .rh-title { font-size: 1.3rem; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+
+    .routine-container {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px;
+      margin-bottom: 16px; box-shadow: var(--card-shadow);
+    }
+    .routine-top-stats {
+      display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem;
+      font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);
+      margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;
+    }
+    .routine-grid { display: flex; flex-direction: column; gap: 10px; }
+    .routine-item {
+      display: flex; align-items: center; justify-content: space-between; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; transition: all 0.15s ease;
+    }
+    .routine-item:hover { border-color: var(--accent); }
+    .routine-item.done { opacity: 0.65; border-color: var(--success); }
+    .routine-item.done .ri-title { text-decoration: line-through; }
+    .ri-left { display: flex; align-items: center; gap: 14px; }
+    .ri-left input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--success); cursor: pointer; }
+    .ri-title { font-size: 0.92rem; font-weight: 700; }
+    .ri-meta { font-size: 0.74rem; color: var(--text-muted); margin-top: 2px; }
+    .ri-cat-badge {
+      font-size: 0.68rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;
+      text-transform: uppercase; background: var(--surface); border: 1px solid var(--border);
+    }
+    .cat-mindfulness { color: #38bdf8; border-color: #0284c7; }
+    .cat-fitness { color: #34d399; border-color: #059669; }
+    .cat-work { color: #fbbf24; border-color: #d97706; }
+    .cat-creative { color: #f472b6; border-color: #db2777; }
+    .cat-family { color: #a78bfa; border-color: #7c3aed; }
+    .cat-adhoc { color: #fb923c; border-color: #ea580c; }
+
+    .life-analytics-grid {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 16px;
     }
     .life-card {
@@ -124,12 +182,10 @@
       font-size: 0.92rem; font-weight: 700; display: flex; justify-content: space-between; align-items: center;
       border-bottom: 1px solid var(--border); padding-bottom: 8px;
     }
-    .todo-item {
-      display: flex; align-items: center; gap: 8px; font-size: 0.84rem; padding: 4px 0; cursor: pointer;
-    }
-    .todo-item input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer; }
 
-    /* Study OS Styling */
+    /* ========================================================
+       TAB 2: 168-DAY STUDY OS STYLES (STRIVER, BACKEND, DRAG&DROP)
+       ======================================================== */
     .resource-dock {
       background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 18px;
       margin-bottom: 14px; box-shadow: var(--card-shadow);
@@ -219,7 +275,20 @@
       padding: 6px 10px; font-size: 0.78rem; resize: vertical; min-height: 32px; margin-top: 6px;
     }
 
-    @media (max-width: 640px) { .days-grid, .life-grid { grid-template-columns: 1fr; } }
+    /* MODALS */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.75);
+      display: none; justify-content: center; align-items: center; z-index: 1000; padding: 16px;
+    }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 16px; width: 100%;
+      max-width: 500px; padding: 22px; box-shadow: var(--card-shadow);
+    }
+    .modal h3 { margin-bottom: 8px; }
+    .modal label { display: block; font-size: 0.78rem; color: var(--text-muted); margin: 10px 0 4px; font-weight: 600; }
+    .modal input, .modal select { width: 100%; }
+
+    @media (max-width: 640px) { .days-grid, .life-analytics-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -229,8 +298,8 @@
     <div id="authGateway">
       <div class="auth-card">
         <div style="font-size: 2.2rem; margin-bottom: 8px;">⚡</div>
-        <h2>Master Life & Study OS</h2>
-        <p>Authenticate to unlock your unified dashboard & cloud sync.</p>
+        <h2>Ruchira's Master OS</h2>
+        <p>Authenticate to unlock your unified Life OS & 168-Day Study Dashboard.</p>
 
         <button id="gateGoogleBtn" style="width:100%; display:flex; align-items:center; justify-content:center; gap:10px; background:#fff; color:#111; font-weight:700; border:1px solid #cbd5e1; margin-bottom:16px; padding:11px; border-radius:12px;">
           <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.347 2.825.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/></svg>
@@ -241,7 +310,7 @@
 
         <div class="auth-form">
           <label>Email Address</label>
-          <input type="text" id="gateEmail" placeholder="your-email@example.com" />
+          <input type="text" id="gateEmail" placeholder="ruchira2306@gmail.com" />
           <label>Password</label>
           <input type="password" id="gatePassword" placeholder="••••••••" />
           <button id="gateLoginBtn" class="btn-primary" style="width:100%; padding:11px; font-weight:700; border-radius:12px; margin-top:6px;">
@@ -256,10 +325,10 @@
       <header>
         <div class="brand">
           <h1>
-            ⚡ Master Life & Study OS
+            ⚡ Ruchira's Master OS
             <span class="badge">Unified Workspace</span>
           </h1>
-          <p>Health & Routine Tracking + 168-Day SDE/GenAI Curriculum (Live Cloud Sync)</p>
+          <p>Chronological Habits, Biometrics & Expenses + 168-Day SDE/GenAI Curriculum</p>
         </div>
         <div class="header-actions">
           <span class="sync-status" id="syncStatusBadge">
@@ -271,36 +340,68 @@
         </div>
       </header>
 
-      <!-- Master Nav Tabs -->
+      <!-- Master Navigation Tabs -->
       <nav class="nav-tabs">
-        <button class="tab-btn active" id="tabBtnLife" onclick="switchTab('life')">🧬 Life OS & Health</button>
+        <button class="tab-btn active" id="tabBtnLife" onclick="switchTab('life')">🧬 Life OS & Daily Habits</button>
         <button class="tab-btn" id="tabBtnStudy" onclick="switchTab('study')">⚡ 168-Day Study OS</button>
       </nav>
 
-      <!-- TAB 1: LIFE OS -->
+      <!-- ========================================================
+           TAB 1: RUCHIRA'S FULL LIFE OS (CALENDAR + 21 HABITS)
+           ======================================================== -->
       <section id="viewLife" class="tab-view active">
-        <div class="life-grid">
-          <div class="life-card">
-            <div class="card-head">
-              <span>🌅 Daily Routine Blueprint</span>
-              <span style="font-size:0.75rem; color:var(--text-muted);">4:30 AM Wake</span>
+        <!-- Interactive Date & Calendar Switcher -->
+        <div class="calendar-bar">
+          <div class="date-nav-group">
+            <button id="calPrevDayBtn">←</button>
+            <input type="date" id="calDatePicker" style="padding:6px 10px;" />
+            <button id="calTodayBtn" class="btn-primary">Today</button>
+            <button id="calNextDayBtn">→</button>
+          </div>
+          <div class="day-pills-row" id="calWeekStrip"></div>
+        </div>
+
+        <!-- Routine Status & Action Header -->
+        <div class="routine-header-card">
+          <div class="rh-top">
+            <div>
+              <div class="rh-title">
+                <span id="lifeCurrentDateTitle">Friday, Oct 23</span>
+                <span class="tag date-tag" id="lifeDayTypeTag">Weekday</span>
+              </div>
+              <div style="font-size:0.8rem; color:var(--text-muted); margin-top:2px;">
+                Select dates from the calendar bar to view, complete, or log historical routines.
+              </div>
             </div>
-            <div id="routineList">
-              <label class="todo-item"><input type="checkbox" data-habit="wake" /> 4:30 AM Wake up & hydrate</label>
-              <label class="todo-item"><input type="checkbox" data-habit="bath_pray" /> Bath & morning prayer</label>
-              <label class="todo-item"><input type="checkbox" data-habit="meditate" /> Mindfulness meditation</label>
-              <label class="todo-item"><input type="checkbox" data-habit="walk" /> 2 km morning walk (Close rings)</label>
-              <label class="todo-item"><input type="checkbox" data-habit="workout" /> Gym workout / Home conditioning</label>
-              <label class="todo-item"><input type="checkbox" data-habit="office_walk" /> Skincare & walk to Amazon campus</label>
-              <label class="todo-item"><input type="checkbox" data-habit="standup_block" /> Pre-standup morning study block</label>
-              <label class="todo-item"><input type="checkbox" data-habit="iitm_block" /> Post-standup IITM block (till 1:00 PM)</label>
-              <label class="todo-item"><input type="checkbox" data-habit="sleep" /> Digital sunset & 10:30 PM sleep</label>
+            <div style="display:flex; gap:8px;">
+              <button id="openAdHocModalBtn" class="btn-primary">+ Add Ad-Hoc Plan</button>
+              <button id="freezeStreakBtn">🧊 Freeze Streak (<span id="lifeFreezesLeft">5</span>)</button>
+              <button id="resetDayRoutineBtn">🔄 Reset Day</button>
             </div>
           </div>
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:0.75rem; font-weight:700; margin-bottom:4px;">
+              <span>Daily Routine Completion</span>
+              <span id="lifeCompletionPct">0%</span>
+            </div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" id="lifeProgressBar"></div></div>
+          </div>
+        </div>
 
+        <!-- The 21-Step Chronological Routine Card -->
+        <div class="routine-container">
+          <div class="routine-top-stats">
+            <span>CHRONOLOGICAL ROUTINE BLUEPRINT</span>
+            <span id="lifeCompletedCount">0 of 21 Completed</span>
+          </div>
+          <div class="routine-grid" id="chronologicalRoutineList"></div>
+        </div>
+
+        <!-- Life OS Analytics: Health, Steps & Expenses -->
+        <div class="life-analytics-grid">
           <div class="life-card">
             <div class="card-head">
-              <span>🏃 Health & Biometrics</span>
+              <span>🏃 Health, Apple Watch & Weight</span>
               <span style="font-size:0.75rem; color:var(--success);">Target: 50–52 kg</span>
             </div>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
@@ -309,37 +410,39 @@
                 <input type="number" step="0.1" id="healthWeight" placeholder="e.g. 58.4" />
               </div>
               <div>
-                <label style="font-size:0.72rem; color:var(--text-muted);">Daily Steps:</label>
+                <label style="font-size:0.72rem; color:var(--text-muted);">Daily Steps (Apple Watch):</label>
                 <input type="number" id="healthSteps" placeholder="e.g. 12500" />
               </div>
               <div>
-                <label style="font-size:0.72rem; color:var(--text-muted);">Active Cal Burned:</label>
+                <label style="font-size:0.72rem; color:var(--text-muted);">Active Energy (kcal):</label>
                 <input type="number" id="healthActiveCal" placeholder="e.g. 550" />
               </div>
               <div>
-                <label style="font-size:0.72rem; color:var(--text-muted);">Water Intake (L):</label>
+                <label style="font-size:0.72rem; color:var(--text-muted);">Water (Liters):</label>
                 <input type="number" step="0.5" id="healthWater" placeholder="e.g. 3.0" />
               </div>
             </div>
-            <textarea class="day-notes" id="healthNotes" placeholder="Gym lift logs, swimming laps, or energy notes..."></textarea>
+            <textarea class="day-notes" id="healthNotes" placeholder="Gym lift details, workout volume, or energy reflection..."></textarea>
           </div>
 
           <div class="life-card">
             <div class="card-head">
-              <span>💳 Monthly Expense & Finance Ledger</span>
+              <span>💳 Monthly Financial Ledger</span>
               <span id="totalSpend" style="font-size:0.75rem; color:var(--warning);">Total: ₹0</span>
             </div>
             <div style="display:flex; gap:8px;">
-              <input type="text" id="expenseDesc" placeholder="Item (e.g. Gym, Books, Groceries)" style="flex:2;" />
+              <input type="text" id="expenseDesc" placeholder="Expense Item (e.g. Books, Gym)" style="flex:2;" />
               <input type="number" id="expenseAmount" placeholder="₹ Amount" style="flex:1;" />
               <button class="btn-primary" id="addExpenseBtn" style="white-space:nowrap;">+ Add</button>
             </div>
-            <div id="expenseList" style="max-height:140px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;"></div>
+            <div id="expenseList" style="max-height:160px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;"></div>
           </div>
         </div>
       </section>
 
-      <!-- TAB 2: STUDY OS -->
+      <!-- ========================================================
+           TAB 2: 168-DAY STUDY OS (DSA, BACKEND, GENAI, DND)
+           ======================================================== -->
       <section id="viewStudy" class="tab-view">
         <div class="resource-dock">
           <div class="dock-title">
@@ -416,6 +519,32 @@
     </div>
   </div>
 
+  <!-- Ad-Hoc Plan Modal (Life OS) -->
+  <div class="modal-overlay" id="adHocModal">
+    <div class="modal">
+      <h3>📅 Add Ad-Hoc Plan / Event</h3>
+      <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:8px;">
+        Add an unscheduled event (e.g. team dinner, outing, errands) without breaking your daily flow.
+      </p>
+      <label>Plan / Activity Name:</label>
+      <input type="text" id="adHocTitle" placeholder="e.g. Team Dinner with Amazon Returns team" />
+      <label>Category:</label>
+      <select id="adHocCategory">
+        <option value="Ad-Hoc">Ad-Hoc / Outing</option>
+        <option value="Mindfulness">Mindfulness / Health</option>
+        <option value="Creative">Creative / Music</option>
+        <option value="Work/Study">Work / Extra Study</option>
+        <option value="Family">Family / Personal</option>
+      </select>
+      <label>Time Slot:</label>
+      <input type="text" id="adHocTime" placeholder="e.g. 07:30 PM - 09:30 PM" />
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
+        <button id="closeAdHocModalBtn">Cancel</button>
+        <button id="saveAdHocBtn" class="btn-primary">+ Add to Today's Routine</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // HARDCODED FIREBASE CONFIGURATION
     const firebaseConfig = {
@@ -436,7 +565,7 @@
       auth = firebase.auth();
       db = firebase.firestore();
     } catch (err) {
-      console.warn("Firebase initialization notice:", err);
+      console.warn("Firebase notice:", err);
     }
 
     function switchTab(tab) {
@@ -451,21 +580,49 @@
       }
     }
 
-    const STORAGE_KEY = "ruchira_master_os_unified_v3";
+    // --- THE 21 CHRONOLOGICAL WEEKDAY ROUTINE STEPS ---
+    const defaultWeekdayRoutine = [
+      { id: "h1", time: "04:30 AM", title: "Wake up at 4:30 AM everyday", cat: "Mindfulness", catCls: "cat-mindfulness" },
+      { id: "h2", time: "04:30 - 05:00 AM", title: "Bath, pray", cat: "Mindfulness", catCls: "cat-mindfulness" },
+      { id: "h3", time: "05:00 - 05:20 AM", title: "Meditate", cat: "Mindfulness", catCls: "cat-mindfulness" },
+      { id: "h4", time: "05:20 - 06:00 AM", title: "Walk at least 2 km (2 rings)", cat: "Fitness", catCls: "cat-fitness" },
+      { id: "h5", time: "06:00 - 07:30 AM", title: "Gym (1.5 hrs) / Home workout (Listen to Vishnu Sahasranam)", cat: "Fitness", catCls: "cat-fitness" },
+      { id: "h6", time: "07:30 - 08:00 AM", title: "Shower post gym", cat: "Mindfulness", catCls: "cat-mindfulness" },
+      { id: "h7", time: "08:00 - 08:30 AM", title: "Skincare, Get ready and walk to office", cat: "Work/Study", catCls: "cat-work" },
+      { id: "h8", time: "08:30 - 09:30 AM", title: "Morning study block in office (pre-standup in conf room)", cat: "Work/Study", catCls: "cat-work" },
+      { id: "h9", time: "09:30 - 10:00 AM", title: "Standup", cat: "Work/Study", catCls: "cat-work" },
+      { id: "h10", time: "10:00 AM - 01:00 PM", title: "Post-standup study block till 1 (IITM, conf room again)", cat: "Work/Study", catCls: "cat-work" },
+      { id: "h11", time: "01:00 - 01:15 PM", title: "Wrap up Lunch by 1:15 pm", cat: "Fitness", catCls: "cat-fitness" },
+      { id: "h12", time: "01:15 - 05:30 PM", title: "Post lunch work (take 5 min breaks - check Flipboard)", cat: "Work/Study", catCls: "cat-work" },
+      { id: "h13", time: "05:30 - 06:00 PM", title: "Evening walk (finish rings) & walk back home", cat: "Fitness", catCls: "cat-fitness" },
+      { id: "h14", time: "06:00 - 06:30 PM", title: "Call home / parents / grandma (daily family connect)", cat: "Family", catCls: "cat-family" },
+      { id: "h15", time: "06:30 - 07:30 PM", title: "Creative Block: Indian Classical Vocal / Guitar practice", cat: "Creative", catCls: "cat-creative" },
+      { id: "h16", time: "07:30 - 08:00 PM", title: "Poetry writing / Sketching / Hackathon prep", cat: "Creative", catCls: "cat-creative" },
+      { id: "h17", time: "08:00 - 08:30 PM", title: "Light Dinner & hydration log", cat: "Fitness", catCls: "cat-fitness" },
+      { id: "h18", time: "08:30 - 09:30 PM", title: "Night Study Block: GenAI Portfolio Monorepo Coding", cat: "Work/Study", catCls: "cat-work" },
+      { id: "h19", time: "09:30 - 10:00 PM", title: "Book Reading (Markus Zusak, Frankl, Hosseini)", cat: "Mindfulness", catCls: "cat-mindfulness" },
+      { id: "h20", time: "10:00 - 10:15 PM", title: "Journaling, Day Review & Tomorrow Blueprint", cat: "Mindfulness", catCls: "cat-mindfulness" },
+      { id: "h21", time: "10:15 - 10:30 PM", title: "Evening Meditation & Sleep by 10:30 PM", cat: "Mindfulness", catCls: "cat-mindfulness" }
+    ];
+
+    const STORAGE_KEY = "ruchira_master_unified_os_v4";
     let state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
-      habits: {},
+      // Life OS Store: keyed by ISO date string (e.g., '2026-10-23')
+      lifeDates: {},
       health: { weight: "", steps: "", activeCal: "", water: "", notes: "" },
       expenses: [],
+      lifeFreezesLeft: 5,
+      // Study OS Store
       completedDays: {},
       completedBlocks: {},
       dayBlocks: {},
       notes: {},
       customDays: [],
-      freezesLeft: 5,
-      frozenDays: {},
       selectedWeek: 1,
       theme: "dark"
     };
+
+    let activeLifeDate = new Date().toISOString().split("T")[0];
 
     function applyTheme() {
       document.documentElement.setAttribute("data-theme", state.theme || "dark");
@@ -481,6 +638,7 @@
     let cloudSyncDebounce = null;
     function saveState() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      renderLifeOS();
       updateStats();
       renderWeekPills();
 
@@ -498,10 +656,234 @@
             setSyncStatus("offline", "Sync Failed");
           }
         }, 1200);
+      } else {
+        setSyncStatus("offline", "Local Cache Only");
       }
     }
 
-    // --- CURRICULUM DEFINITIONS ---
+    // ==========================================
+    // LIFE OS CONTROLLERS & RENDERERS
+    // ==========================================
+    function getLifeDayData(dateIso) {
+      if (!state.lifeDates[dateIso]) {
+        state.lifeDates[dateIso] = {
+          routine: JSON.parse(JSON.stringify(defaultWeekdayRoutine)),
+          completed: {},
+          frozen: false,
+          notes: ""
+        };
+      }
+      return state.lifeDates[dateIso];
+    }
+
+    function renderLifeOS() {
+      document.getElementById("calDatePicker").value = activeLifeDate;
+      const dayData = getLifeDayData(activeLifeDate);
+
+      const dObj = new Date(activeLifeDate + "T00:00:00");
+      const dayName = dObj.toLocaleDateString("en-US", { weekday: "long" });
+      const monthDay = dObj.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      const isWeekend = (dObj.getDay() === 0 || dObj.getDay() === 6);
+
+      document.getElementById("lifeCurrentDateTitle").textContent = `${dayName}, ${monthDay}`;
+      document.getElementById("lifeDayTypeTag").textContent = isWeekend ? "Weekend" : "Weekday";
+      document.getElementById("lifeFreezesLeft").textContent = state.lifeFreezesLeft || 5;
+
+      // Render Calendar Strip (7 days around active date)
+      const stripEl = document.getElementById("calWeekStrip");
+      stripEl.innerHTML = "";
+      for (let offset = -3; offset <= 3; offset++) {
+        const pDate = new Date(dObj);
+        pDate.setDate(dObj.getDate() + offset);
+        const pIso = pDate.toISOString().split("T")[0];
+        const pDayName = pDate.toLocaleDateString("en-US", { weekday: "short" });
+        const pNum = pDate.getDate();
+
+        const pill = document.createElement("div");
+        pill.className = `cal-day-pill ${pIso === activeLifeDate ? "active" : ""}`;
+        pill.innerHTML = `<span class="cp-day">${pDayName}</span><span class="cp-num">${pNum}</span>`;
+        pill.onclick = () => {
+          activeLifeDate = pIso;
+          renderLifeOS();
+        };
+        stripEl.appendChild(pill);
+      }
+
+      // Render Chronological Routine Items
+      const routineListEl = document.getElementById("chronologicalRoutineList");
+      routineListEl.innerHTML = "";
+      let completedCount = 0;
+      const routineItems = dayData.routine || [];
+
+      routineItems.forEach(item => {
+        const isDone = !!dayData.completed[item.id];
+        if (isDone) completedCount++;
+
+        const row = document.createElement("div");
+        row.className = `routine-item ${isDone ? "done" : ""}`;
+        row.innerHTML = `
+          <div class="ri-left">
+            <input type="checkbox" ${isDone ? "checked" : ""} data-hid="${item.id}" />
+            <div>
+              <div class="ri-title">${item.title}</div>
+              <div class="ri-meta">${item.time}</div>
+            </div>
+          </div>
+          <span class="ri-cat-badge ${item.catCls || "cat-mindfulness"}">${item.cat}</span>
+        `;
+
+        row.querySelector("input").addEventListener("change", (e) => {
+          dayData.completed[item.id] = e.target.checked;
+          saveState();
+        });
+
+        routineListEl.appendChild(row);
+      });
+
+      const totalItems = routineItems.length || 21;
+      const pct = Math.round((completedCount / totalItems) * 100);
+      document.getElementById("lifeCompletedCount").textContent = `${completedCount} of ${totalItems} Completed`;
+      document.getElementById("lifeCompletionPct").textContent = `${pct}%`;
+      document.getElementById("lifeProgressBar").style.width = `${pct}%`;
+
+      // Health inputs
+      document.getElementById("healthWeight").value = state.health.weight || "";
+      document.getElementById("healthSteps").value = state.health.steps || "";
+      document.getElementById("healthActiveCal").value = state.health.activeCal || "";
+      document.getElementById("healthWater").value = state.health.water || "";
+      document.getElementById("healthNotes").value = state.health.notes || "";
+
+      renderExpenses();
+    }
+
+    // Health input bindings
+    ["healthWeight", "healthSteps", "healthActiveCal", "healthWater"].forEach(id => {
+      document.getElementById(id).addEventListener("input", (e) => {
+        const key = id.replace("health", "").toLowerCase();
+        state.health[id.replace("health", "").charAt(0).toLowerCase() + id.replace("health", "").slice(1)] = e.target.value;
+        saveState();
+      });
+    });
+    document.getElementById("healthNotes").addEventListener("input", (e) => {
+      state.health.notes = e.target.value;
+      saveState();
+    });
+
+    // Calendar Picker controls
+    document.getElementById("calDatePicker").addEventListener("change", (e) => {
+      if (e.target.value) {
+        activeLifeDate = e.target.value;
+        renderLifeOS();
+      }
+    });
+    document.getElementById("calPrevDayBtn").addEventListener("click", () => {
+      const d = new Date(activeLifeDate + "T00:00:00");
+      d.setDate(d.getDate() - 1);
+      activeLifeDate = d.toISOString().split("T")[0];
+      renderLifeOS();
+    });
+    document.getElementById("calNextDayBtn").addEventListener("click", () => {
+      const d = new Date(activeLifeDate + "T00:00:00");
+      d.setDate(d.getDate() + 1);
+      activeLifeDate = d.toISOString().split("T")[0];
+      renderLifeOS();
+    });
+    document.getElementById("calTodayBtn").addEventListener("click", () => {
+      activeLifeDate = new Date().toISOString().split("T")[0];
+      renderLifeOS();
+    });
+
+    // Reset Day Routine
+    document.getElementById("resetDayRoutineBtn").addEventListener("click", () => {
+      if (confirm(`Reset all routine completions for ${activeLifeDate}?`)) {
+        const dayData = getLifeDayData(activeLifeDate);
+        dayData.completed = {};
+        saveState();
+      }
+    });
+
+    // Streak Freeze Manager
+    document.getElementById("freezeStreakBtn").addEventListener("click", () => {
+      if ((state.lifeFreezesLeft || 0) <= 0) return alert("No streak freezes remaining!");
+      const dayData = getLifeDayData(activeLifeDate);
+      if (dayData.frozen) return alert("This day is already protected by a streak freeze.");
+      dayData.frozen = true;
+      state.lifeFreezesLeft = (state.lifeFreezesLeft || 5) - 1;
+      saveState();
+      alert(`Streak freeze applied to ${activeLifeDate}. Your habit streak is safeguarded!`);
+    });
+
+    // Ad-Hoc Plan Modal
+    const adHocModal = document.getElementById("adHocModal");
+    document.getElementById("openAdHocModalBtn").addEventListener("click", () => {
+      adHocModal.style.display = "flex";
+    });
+    document.getElementById("closeAdHocModalBtn").addEventListener("click", () => {
+      adHocModal.style.display = "none";
+    });
+    document.getElementById("saveAdHocBtn").addEventListener("click", () => {
+      const title = document.getElementById("adHocTitle").value.trim();
+      const cat = document.getElementById("adHocCategory").value;
+      const time = document.getElementById("adHocTime").value.trim() || "Flexible";
+      if (!title) return alert("Enter an activity name.");
+
+      const dayData = getLifeDayData(activeLifeDate);
+      dayData.routine.push({
+        id: `adhoc_${Date.now()}`,
+        time: time,
+        title: title,
+        cat: cat,
+        catCls: "cat-adhoc"
+      });
+
+      adHocModal.style.display = "none";
+      document.getElementById("adHocTitle").value = "";
+      document.getElementById("adHocTime").value = "";
+      saveState();
+    });
+
+    // Financial Ledger
+    function renderExpenses() {
+      const list = document.getElementById("expenseList");
+      list.innerHTML = "";
+      let total = 0;
+      (state.expenses || []).forEach((item, idx) => {
+        total += Number(item.amount || 0);
+        const row = document.createElement("div");
+        row.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:5px 8px; font-size:0.78rem;";
+        row.innerHTML = `
+          <span>${item.desc}</span>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <strong style="color:var(--warning);">₹${Number(item.amount).toLocaleString()}</strong>
+            <button style="padding:2px 6px; font-size:0.68rem; color:var(--exam);" onclick="removeExpense(${idx})">✕</button>
+          </div>
+        `;
+        list.appendChild(row);
+      });
+      document.getElementById("totalSpend").textContent = `Total: ₹${total.toLocaleString()}`;
+    }
+
+    document.getElementById("addExpenseBtn").addEventListener("click", () => {
+      const desc = document.getElementById("expenseDesc").value.trim();
+      const amount = document.getElementById("expenseAmount").value.trim();
+      if (!desc || !amount) return;
+      if (!state.expenses) state.expenses = [];
+      state.expenses.push({ desc, amount: Number(amount), date: activeLifeDate });
+      document.getElementById("expenseDesc").value = "";
+      document.getElementById("expenseAmount").value = "";
+      renderExpenses();
+      saveState();
+    });
+
+    window.removeExpense = function(idx) {
+      state.expenses.splice(idx, 1);
+      renderExpenses();
+      saveState();
+    };
+
+    // ==========================================
+    // STUDY OS CONTROLLERS & CURRICULUM
+    // ==========================================
     const striverTopics = [
       "Step 1: Learn the Basics, Patterns & Time Complexity", "Step 1: Basic Maths, Recursion & Hashing Notes",
       "Step 2: Sorting Techniques (Merge, Quick, Recursive Bubble)", "Step 3.1: Arrays Easy (2nd Largest, Rotate, Union, Missing Num)",
@@ -813,95 +1195,6 @@
       });
     }
 
-    function getAllDays() {
-      const all = [...baseDays, ...(state.customDays || [])].sort((a, b) => a.day - b.day);
-      all.forEach(d => {
-        if (state.dayBlocks[d.id]) {
-          d.blocks = state.dayBlocks[d.id];
-        }
-      });
-      return all;
-    }
-
-    // --- LIFE OS RENDERERS ---
-    function renderLifeOS() {
-      document.querySelectorAll("#routineList input[type='checkbox']").forEach(cb => {
-        const habitKey = cb.getAttribute("data-habit");
-        cb.checked = !!state.habits[habitKey];
-        cb.onchange = (e) => {
-          state.habits[habitKey] = e.target.checked;
-          saveState();
-        };
-      });
-
-      const wEl = document.getElementById("healthWeight");
-      const sEl = document.getElementById("healthSteps");
-      const cEl = document.getElementById("healthActiveCal");
-      const wtEl = document.getElementById("healthWater");
-      const nEl = document.getElementById("healthNotes");
-
-      wEl.value = state.health.weight || "";
-      sEl.value = state.health.steps || "";
-      cEl.value = state.health.activeCal || "";
-      wtEl.value = state.health.water || "";
-      nEl.value = state.health.notes || "";
-
-      [wEl, sEl, cEl, wtEl].forEach(input => {
-        input.oninput = () => {
-          state.health.weight = wEl.value;
-          state.health.steps = sEl.value;
-          state.health.activeCal = cEl.value;
-          state.health.water = wtEl.value;
-          saveState();
-        };
-      });
-      nEl.oninput = () => {
-        state.health.notes = nEl.value;
-        saveState();
-      };
-
-      renderExpenses();
-    }
-
-    function renderExpenses() {
-      const list = document.getElementById("expenseList");
-      list.innerHTML = "";
-      let total = 0;
-      (state.expenses || []).forEach((item, idx) => {
-        total += Number(item.amount || 0);
-        const row = document.createElement("div");
-        row.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:4px 8px; font-size:0.78rem;";
-        row.innerHTML = `
-          <span>${item.desc}</span>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <strong style="color:var(--warning);">₹${Number(item.amount).toLocaleString()}</strong>
-            <button style="padding:2px 6px; font-size:0.68rem; color:var(--exam);" onclick="removeExpense(${idx})">✕</button>
-          </div>
-        `;
-        list.appendChild(row);
-      });
-      document.getElementById("totalSpend").textContent = `Total: ₹${total.toLocaleString()}`;
-    }
-
-    document.getElementById("addExpenseBtn").addEventListener("click", () => {
-      const desc = document.getElementById("expenseDesc").value.trim();
-      const amount = document.getElementById("expenseAmount").value.trim();
-      if (!desc || !amount) return;
-      if (!state.expenses) state.expenses = [];
-      state.expenses.push({ desc, amount: Number(amount), date: new Date().toLocaleDateString() });
-      document.getElementById("expenseDesc").value = "";
-      document.getElementById("expenseAmount").value = "";
-      renderExpenses();
-      saveState();
-    });
-
-    window.removeExpense = function(idx) {
-      state.expenses.splice(idx, 1);
-      renderExpenses();
-      saveState();
-    };
-
-    // --- STUDY OS RENDERERS ---
     function updateStats() {
       const all = getAllDays();
       const doneDays = all.filter(d => state.completedDays[d.id]);
@@ -937,12 +1230,12 @@
       let streak = 0;
       let maxIdx = -1;
       for (let i = all.length - 1; i >= 0; i--) {
-        if (state.completedDays[all[i].id] || state.frozenDays[all[i].id]) {
+        if (state.completedDays[all[i].id]) {
           maxIdx = i; break;
         }
       }
       for (let i = maxIdx; i >= 0; i--) {
-        if (state.completedDays[all[i].id] || state.frozenDays[all[i].id]) streak++;
+        if (state.completedDays[all[i].id]) streak++;
         else break;
       }
       document.getElementById("streakVal").textContent = streak;
@@ -969,8 +1262,6 @@
         container.appendChild(pill);
       }
     }
-
-    let draggedBlockData = null;
 
     function renderDays() {
       const grid = document.getElementById("daysGrid");
@@ -999,7 +1290,6 @@
 
       filtered.forEach(item => {
         const isDone = !!state.completedDays[item.id];
-        const isFrozen = !!state.frozenDays[item.id];
         const card = document.createElement("div");
         card.id = `card_${item.id}`;
         card.className = `day-card ${isDone ? "done" : ""} ${item.isExamDay ? "exam-day" : ""}`;
@@ -1028,7 +1318,6 @@
                 <span class="tag">Day ${item.day} · W${item.week}</span>
                 <span class="tag ${item.isWeekend ? "weekend" : ""}">${item.isWeekend ? "Weekend (~5.5h)" : "Weekday (~3.5h)"}</span>
                 ${item.examBadge ? `<span class="tag ${item.isExamDay ? "exam-tag" : "buffer-tag"}">${item.examBadge}</span>` : ""}
-                ${isFrozen ? `<span class="tag">🧊 Frozen</span>` : ""}
               </div>
               <label class="check-wrapper">
                 <input type="checkbox" class="master-day-check" data-id="${item.id}" ${isDone ? "checked" : ""} />
@@ -1130,7 +1419,9 @@
       });
     }
 
-    // --- AUTHENTICATION & GATEWAY LOGIC ---
+    // ==========================================
+    // AUTHENTICATION GATEWAY & AUTO-UNLOCK
+    // ==========================================
     const authGateway = document.getElementById("authGateway");
     const appWrapper = document.getElementById("appWrapper");
 
@@ -1157,7 +1448,6 @@
     if (auth) {
       auth.onAuthStateChanged(async (user) => {
         if (user) {
-          // User already logged in -> fetch state & reveal dashboard immediately
           try {
             const doc = await db.collection("users").doc(user.uid).get();
             if (doc.exists && doc.data().data) {
@@ -1174,7 +1464,6 @@
       });
     }
 
-    // 1. Google Sign-In on Gateway
     document.getElementById("gateGoogleBtn").addEventListener("click", async () => {
       if (!auth) return alert("Firebase not initialized.");
       const provider = new firebase.auth.GoogleAuthProvider();
@@ -1185,7 +1474,6 @@
       }
     });
 
-    // 2. Email/Password Sign-In / Register on Gateway
     document.getElementById("gateLoginBtn").addEventListener("click", async () => {
       const email = document.getElementById("gateEmail").value.trim();
       const pass = document.getElementById("gatePassword").value.trim();
@@ -1208,14 +1496,29 @@
       }
     });
 
-    // Logout Button in Header
     document.getElementById("logoutBtn").addEventListener("click", async () => {
       if (auth) {
         await auth.signOut();
       }
     });
 
-    // Controls
+    // Countdowns & Global Controls
+    const quiz1Date = new Date(2026, 10, 15);
+    const quiz2Date = new Date(2026, 11, 5);
+    const endTermDate = new Date(2027, 0, 10);
+
+    function updateCountdowns() {
+      const today = new Date();
+      const q1Diff = Math.ceil((quiz1Date - today) / (1000 * 60 * 60 * 24));
+      const q2Diff = Math.ceil((quiz2Date - today) / (1000 * 60 * 60 * 24));
+      const endDiff = Math.ceil((endTermDate - today) / (1000 * 60 * 60 * 24));
+      const parts = [];
+      if (q1Diff >= 0) parts.push(`Quiz 1: ${q1Diff}d`);
+      if (q2Diff >= 0) parts.push(`Quiz 2: ${q2Diff}d`);
+      if (endDiff >= 0) parts.push(`End-Term: ${endDiff}d`);
+      document.getElementById("countdownBanner").textContent = parts.length ? "⏳ IITM Deadlines — " + parts.join(" · ") : "🎓 IITM Term Complete!";
+    }
+
     document.getElementById("monthFilter").addEventListener("change", () => {
       state.selectedWeek = "all";
       renderWeekPills();
