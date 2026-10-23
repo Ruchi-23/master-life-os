@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ruchira's Master Life & Study OS</title>
+  <title>Master OS | Unified Life & GenAI Dashboard</title>
   
-  <!-- Firebase SDKs (v10 compat) -->
+  <!-- Firebase SDKs via CDN -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -112,9 +112,7 @@
     .tab-view { display: none; }
     .tab-view.active { display: block; }
 
-    /* ========================================================
-       TAB 1: RUCHIRA'S LIFE OS STYLES (CALENDAR + 21 HABITS)
-       ======================================================== */
+    /* LIFE OS STYLES */
     .calendar-bar {
       display: flex; justify-content: space-between; align-items: center; background: var(--surface);
       border: 1px solid var(--border); border-radius: 14px; padding: 12px 18px; margin-bottom: 14px;
@@ -183,9 +181,7 @@
       border-bottom: 1px solid var(--border); padding-bottom: 8px;
     }
 
-    /* ========================================================
-       TAB 2: 168-DAY STUDY OS STYLES (STRIVER, BACKEND, DRAG&DROP)
-       ======================================================== */
+    /* STUDY OS STYLES */
     .resource-dock {
       background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 18px;
       margin-bottom: 14px; box-shadow: var(--card-shadow);
@@ -275,7 +271,6 @@
       padding: 6px 10px; font-size: 0.78rem; resize: vertical; min-height: 32px; margin-top: 6px;
     }
 
-    /* MODALS */
     .modal-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.75);
       display: none; justify-content: center; align-items: center; z-index: 1000; padding: 16px;
@@ -605,14 +600,12 @@
       { id: "h21", time: "10:15 - 10:30 PM", title: "Evening Meditation & Sleep by 10:30 PM", cat: "Mindfulness", catCls: "cat-mindfulness" }
     ];
 
-    const STORAGE_KEY = "ruchira_master_unified_os_v4";
+    const STORAGE_KEY = "ruchira_master_unified_os_v5";
     let state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
-      // Life OS Store: keyed by ISO date string (e.g., '2026-10-23')
       lifeDates: {},
       health: { weight: "", steps: "", activeCal: "", water: "", notes: "" },
       expenses: [],
       lifeFreezesLeft: 5,
-      // Study OS Store
       completedDays: {},
       completedBlocks: {},
       dayBlocks: {},
@@ -661,229 +654,7 @@
       }
     }
 
-    // ==========================================
-    // LIFE OS CONTROLLERS & RENDERERS
-    // ==========================================
-    function getLifeDayData(dateIso) {
-      if (!state.lifeDates[dateIso]) {
-        state.lifeDates[dateIso] = {
-          routine: JSON.parse(JSON.stringify(defaultWeekdayRoutine)),
-          completed: {},
-          frozen: false,
-          notes: ""
-        };
-      }
-      return state.lifeDates[dateIso];
-    }
-
-    function renderLifeOS() {
-      document.getElementById("calDatePicker").value = activeLifeDate;
-      const dayData = getLifeDayData(activeLifeDate);
-
-      const dObj = new Date(activeLifeDate + "T00:00:00");
-      const dayName = dObj.toLocaleDateString("en-US", { weekday: "long" });
-      const monthDay = dObj.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-      const isWeekend = (dObj.getDay() === 0 || dObj.getDay() === 6);
-
-      document.getElementById("lifeCurrentDateTitle").textContent = `${dayName}, ${monthDay}`;
-      document.getElementById("lifeDayTypeTag").textContent = isWeekend ? "Weekend" : "Weekday";
-      document.getElementById("lifeFreezesLeft").textContent = state.lifeFreezesLeft || 5;
-
-      // Render Calendar Strip (7 days around active date)
-      const stripEl = document.getElementById("calWeekStrip");
-      stripEl.innerHTML = "";
-      for (let offset = -3; offset <= 3; offset++) {
-        const pDate = new Date(dObj);
-        pDate.setDate(dObj.getDate() + offset);
-        const pIso = pDate.toISOString().split("T")[0];
-        const pDayName = pDate.toLocaleDateString("en-US", { weekday: "short" });
-        const pNum = pDate.getDate();
-
-        const pill = document.createElement("div");
-        pill.className = `cal-day-pill ${pIso === activeLifeDate ? "active" : ""}`;
-        pill.innerHTML = `<span class="cp-day">${pDayName}</span><span class="cp-num">${pNum}</span>`;
-        pill.onclick = () => {
-          activeLifeDate = pIso;
-          renderLifeOS();
-        };
-        stripEl.appendChild(pill);
-      }
-
-      // Render Chronological Routine Items
-      const routineListEl = document.getElementById("chronologicalRoutineList");
-      routineListEl.innerHTML = "";
-      let completedCount = 0;
-      const routineItems = dayData.routine || [];
-
-      routineItems.forEach(item => {
-        const isDone = !!dayData.completed[item.id];
-        if (isDone) completedCount++;
-
-        const row = document.createElement("div");
-        row.className = `routine-item ${isDone ? "done" : ""}`;
-        row.innerHTML = `
-          <div class="ri-left">
-            <input type="checkbox" ${isDone ? "checked" : ""} data-hid="${item.id}" />
-            <div>
-              <div class="ri-title">${item.title}</div>
-              <div class="ri-meta">${item.time}</div>
-            </div>
-          </div>
-          <span class="ri-cat-badge ${item.catCls || "cat-mindfulness"}">${item.cat}</span>
-        `;
-
-        row.querySelector("input").addEventListener("change", (e) => {
-          dayData.completed[item.id] = e.target.checked;
-          saveState();
-        });
-
-        routineListEl.appendChild(row);
-      });
-
-      const totalItems = routineItems.length || 21;
-      const pct = Math.round((completedCount / totalItems) * 100);
-      document.getElementById("lifeCompletedCount").textContent = `${completedCount} of ${totalItems} Completed`;
-      document.getElementById("lifeCompletionPct").textContent = `${pct}%`;
-      document.getElementById("lifeProgressBar").style.width = `${pct}%`;
-
-      // Health inputs
-      document.getElementById("healthWeight").value = state.health.weight || "";
-      document.getElementById("healthSteps").value = state.health.steps || "";
-      document.getElementById("healthActiveCal").value = state.health.activeCal || "";
-      document.getElementById("healthWater").value = state.health.water || "";
-      document.getElementById("healthNotes").value = state.health.notes || "";
-
-      renderExpenses();
-    }
-
-    // Health input bindings
-    ["healthWeight", "healthSteps", "healthActiveCal", "healthWater"].forEach(id => {
-      document.getElementById(id).addEventListener("input", (e) => {
-        const key = id.replace("health", "").toLowerCase();
-        state.health[id.replace("health", "").charAt(0).toLowerCase() + id.replace("health", "").slice(1)] = e.target.value;
-        saveState();
-      });
-    });
-    document.getElementById("healthNotes").addEventListener("input", (e) => {
-      state.health.notes = e.target.value;
-      saveState();
-    });
-
-    // Calendar Picker controls
-    document.getElementById("calDatePicker").addEventListener("change", (e) => {
-      if (e.target.value) {
-        activeLifeDate = e.target.value;
-        renderLifeOS();
-      }
-    });
-    document.getElementById("calPrevDayBtn").addEventListener("click", () => {
-      const d = new Date(activeLifeDate + "T00:00:00");
-      d.setDate(d.getDate() - 1);
-      activeLifeDate = d.toISOString().split("T")[0];
-      renderLifeOS();
-    });
-    document.getElementById("calNextDayBtn").addEventListener("click", () => {
-      const d = new Date(activeLifeDate + "T00:00:00");
-      d.setDate(d.getDate() + 1);
-      activeLifeDate = d.toISOString().split("T")[0];
-      renderLifeOS();
-    });
-    document.getElementById("calTodayBtn").addEventListener("click", () => {
-      activeLifeDate = new Date().toISOString().split("T")[0];
-      renderLifeOS();
-    });
-
-    // Reset Day Routine
-    document.getElementById("resetDayRoutineBtn").addEventListener("click", () => {
-      if (confirm(`Reset all routine completions for ${activeLifeDate}?`)) {
-        const dayData = getLifeDayData(activeLifeDate);
-        dayData.completed = {};
-        saveState();
-      }
-    });
-
-    // Streak Freeze Manager
-    document.getElementById("freezeStreakBtn").addEventListener("click", () => {
-      if ((state.lifeFreezesLeft || 0) <= 0) return alert("No streak freezes remaining!");
-      const dayData = getLifeDayData(activeLifeDate);
-      if (dayData.frozen) return alert("This day is already protected by a streak freeze.");
-      dayData.frozen = true;
-      state.lifeFreezesLeft = (state.lifeFreezesLeft || 5) - 1;
-      saveState();
-      alert(`Streak freeze applied to ${activeLifeDate}. Your habit streak is safeguarded!`);
-    });
-
-    // Ad-Hoc Plan Modal
-    const adHocModal = document.getElementById("adHocModal");
-    document.getElementById("openAdHocModalBtn").addEventListener("click", () => {
-      adHocModal.style.display = "flex";
-    });
-    document.getElementById("closeAdHocModalBtn").addEventListener("click", () => {
-      adHocModal.style.display = "none";
-    });
-    document.getElementById("saveAdHocBtn").addEventListener("click", () => {
-      const title = document.getElementById("adHocTitle").value.trim();
-      const cat = document.getElementById("adHocCategory").value;
-      const time = document.getElementById("adHocTime").value.trim() || "Flexible";
-      if (!title) return alert("Enter an activity name.");
-
-      const dayData = getLifeDayData(activeLifeDate);
-      dayData.routine.push({
-        id: `adhoc_${Date.now()}`,
-        time: time,
-        title: title,
-        cat: cat,
-        catCls: "cat-adhoc"
-      });
-
-      adHocModal.style.display = "none";
-      document.getElementById("adHocTitle").value = "";
-      document.getElementById("adHocTime").value = "";
-      saveState();
-    });
-
-    // Financial Ledger
-    function renderExpenses() {
-      const list = document.getElementById("expenseList");
-      list.innerHTML = "";
-      let total = 0;
-      (state.expenses || []).forEach((item, idx) => {
-        total += Number(item.amount || 0);
-        const row = document.createElement("div");
-        row.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:5px 8px; font-size:0.78rem;";
-        row.innerHTML = `
-          <span>${item.desc}</span>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <strong style="color:var(--warning);">₹${Number(item.amount).toLocaleString()}</strong>
-            <button style="padding:2px 6px; font-size:0.68rem; color:var(--exam);" onclick="removeExpense(${idx})">✕</button>
-          </div>
-        `;
-        list.appendChild(row);
-      });
-      document.getElementById("totalSpend").textContent = `Total: ₹${total.toLocaleString()}`;
-    }
-
-    document.getElementById("addExpenseBtn").addEventListener("click", () => {
-      const desc = document.getElementById("expenseDesc").value.trim();
-      const amount = document.getElementById("expenseAmount").value.trim();
-      if (!desc || !amount) return;
-      if (!state.expenses) state.expenses = [];
-      state.expenses.push({ desc, amount: Number(amount), date: activeLifeDate });
-      document.getElementById("expenseDesc").value = "";
-      document.getElementById("expenseAmount").value = "";
-      renderExpenses();
-      saveState();
-    });
-
-    window.removeExpense = function(idx) {
-      state.expenses.splice(idx, 1);
-      renderExpenses();
-      saveState();
-    };
-
-    // ==========================================
-    // STUDY OS CONTROLLERS & CURRICULUM
-    // ==========================================
+    // --- CURRICULUM DEFINITIONS ---
     const striverTopics = [
       "Step 1: Learn the Basics, Patterns & Time Complexity", "Step 1: Basic Maths, Recursion & Hashing Notes",
       "Step 2: Sorting Techniques (Merge, Quick, Recursive Bubble)", "Step 3.1: Arrays Easy (2nd Largest, Rotate, Union, Missing Num)",
@@ -1195,6 +966,247 @@
       });
     }
 
+    function getAllDays() {
+      const all = [...baseDays, ...(state.customDays || [])].sort((a, b) => a.day - b.day);
+      all.forEach(d => {
+        if (state.dayBlocks[d.id]) {
+          d.blocks = state.dayBlocks[d.id];
+        }
+      });
+      return all;
+    }
+
+    // --- LIFE OS RENDERERS ---
+    function getLifeDayData(dateIso) {
+      if (!state.lifeDates[dateIso]) {
+        state.lifeDates[dateIso] = {
+          routine: JSON.parse(JSON.stringify(defaultWeekdayRoutine)),
+          completed: {},
+          frozen: false,
+          notes: ""
+        };
+      }
+      return state.lifeDates[dateIso];
+    }
+
+    function renderLifeOS() {
+      document.getElementById("calDatePicker").value = activeLifeDate;
+      const dayData = getLifeDayData(activeLifeDate);
+
+      const dObj = new Date(activeLifeDate + "T00:00:00");
+      const dayName = dObj.toLocaleDateString("en-US", { weekday: "long" });
+      const monthDay = dObj.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      const isWeekend = (dObj.getDay() === 0 || dObj.getDay() === 6);
+
+      document.getElementById("lifeCurrentDateTitle").textContent = `${dayName}, ${monthDay}`;
+      document.getElementById("lifeDayTypeTag").textContent = isWeekend ? "Weekend" : "Weekday";
+      document.getElementById("lifeFreezesLeft").textContent = state.lifeFreezesLeft || 5;
+
+      const stripEl = document.getElementById("calWeekStrip");
+      stripEl.innerHTML = "";
+      for (let offset = -3; offset <= 3; offset++) {
+        const pDate = new Date(dObj);
+        pDate.setDate(dObj.getDate() + offset);
+        const pIso = pDate.toISOString().split("T")[0];
+        const pDayName = pDate.toLocaleDateString("en-US", { weekday: "short" });
+        const pNum = pDate.getDate();
+
+        const pill = document.createElement("div");
+        pill.className = `cal-day-pill ${pIso === activeLifeDate ? "active" : ""}`;
+        pill.innerHTML = `<span class="cp-day">${pDayName}</span><span class="cp-num">${pNum}</span>`;
+        pill.onclick = () => {
+          activeLifeDate = pIso;
+          renderLifeOS();
+        };
+        stripEl.appendChild(pill);
+      }
+
+      const routineListEl = document.getElementById("chronologicalRoutineList");
+      routineListEl.innerHTML = "";
+      let completedCount = 0;
+      const routineItems = dayData.routine || [];
+
+      routineItems.forEach(item => {
+        const isDone = !!dayData.completed[item.id];
+        if (isDone) completedCount++;
+
+        const row = document.createElement("div");
+        row.className = `routine-item ${isDone ? "done" : ""}`;
+        row.innerHTML = `
+          <div class="ri-left">
+            <input type="checkbox" ${isDone ? "checked" : ""} data-hid="${item.id}" />
+            <div>
+              <div class="ri-title">${item.title}</div>
+              <div class="ri-meta">${item.time}</div>
+            </div>
+          </div>
+          <span class="ri-cat-badge ${item.catCls || "cat-mindfulness"}">${item.cat}</span>
+        `;
+
+        row.querySelector("input").addEventListener("change", (e) => {
+          dayData.completed[item.id] = e.target.checked;
+          saveState();
+        });
+
+        routineListEl.appendChild(row);
+      });
+
+      const totalItems = routineItems.length || 21;
+      const pct = Math.round((completedCount / totalItems) * 100);
+      document.getElementById("lifeCompletedCount").textContent = `${completedCount} of ${totalItems} Completed`;
+      document.getElementById("lifeCompletionPct").textContent = `${pct}%`;
+      document.getElementById("lifeProgressBar").style.width = `${pct}%`;
+
+      document.getElementById("healthWeight").value = state.health.weight || "";
+      document.getElementById("healthSteps").value = state.health.steps || "";
+      document.getElementById("healthActiveCal").value = state.health.activeCal || "";
+      document.getElementById("healthWater").value = state.health.water || "";
+      document.getElementById("healthNotes").value = state.health.notes || "";
+
+      renderExpenses();
+    }
+
+    ["healthWeight", "healthSteps", "healthActiveCal", "healthWater"].forEach(id => {
+      document.getElementById(id).addEventListener("input", (e) => {
+        const field = id.replace("health", "").charAt(0).toLowerCase() + id.replace("health", "").slice(1);
+        state.health[field] = e.target.value;
+        saveState();
+      });
+    });
+    document.getElementById("healthNotes").addEventListener("input", (e) => {
+      state.health.notes = e.target.value;
+      saveState();
+    });
+
+    document.getElementById("calDatePicker").addEventListener("change", (e) => {
+      if (e.target.value) {
+        activeLifeDate = e.target.value;
+        renderLifeOS();
+      }
+    });
+    document.getElementById("calPrevDayBtn").addEventListener("click", () => {
+      const d = new Date(activeLifeDate + "T00:00:00");
+      d.setDate(d.getDate() - 1);
+      activeLifeDate = d.toISOString().split("T")[0];
+      renderLifeOS();
+    });
+    document.getElementById("calNextDayBtn").addEventListener("click", () => {
+      const d = new Date(activeLifeDate + "T00:00:00");
+      d.setDate(d.getDate() + 1);
+      activeLifeDate = d.toISOString().split("T")[0];
+      renderLifeOS();
+    });
+    document.getElementById("calTodayBtn").addEventListener("click", () => {
+      activeLifeDate = new Date().toISOString().split("T")[0];
+      renderLifeOS();
+    });
+
+    document.getElementById("resetDayRoutineBtn").addEventListener("click", () => {
+      if (confirm(`Reset routine completions for ${activeLifeDate}?`)) {
+        const dayData = getLifeDayData(activeLifeDate);
+        dayData.completed = {};
+        saveState();
+      }
+    });
+
+    document.getElementById("freezeStreakBtn").addEventListener("click", () => {
+      if ((state.lifeFreezesLeft || 0) <= 0) return alert("No streak freezes remaining!");
+      const dayData = getLifeDayData(activeLifeDate);
+      if (dayData.frozen) return alert("This day is already protected.");
+      dayData.frozen = true;
+      state.lifeFreezesLeft = (state.lifeFreezesLeft || 5) - 1;
+      saveState();
+      alert(`Streak freeze applied to ${activeLifeDate}.`);
+    });
+
+    const adHocModal = document.createElement("div");
+    adHocModal.className = "modal-overlay";
+    adHocModal.id = "adHocModal";
+    adHocModal.innerHTML = `
+      <div class="modal">
+        <h3>📅 Add Ad-Hoc Plan / Event</h3>
+        <label>Activity Name:</label>
+        <input type="text" id="adHocTitle" placeholder="e.g. Team Dinner" />
+        <label>Category:</label>
+        <select id="adHocCategory">
+          <option value="Ad-Hoc">Ad-Hoc</option>
+          <option value="Mindfulness">Mindfulness</option>
+          <option value="Creative">Creative</option>
+          <option value="Work/Study">Work / Study</option>
+        </select>
+        <label>Time Slot:</label>
+        <input type="text" id="adHocTime" placeholder="e.g. 07:30 PM - 09:30 PM" />
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
+          <button onclick="document.getElementById('adHocModal').style.display='none'">Cancel</button>
+          <button id="saveAdHocBtn" class="btn-primary">+ Add</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(adHocModal);
+
+    document.getElementById("openAdHocModalBtn").addEventListener("click", () => {
+      adHocModal.style.display = "flex";
+    });
+    document.getElementById("saveAdHocBtn").addEventListener("click", () => {
+      const title = document.getElementById("adHocTitle").value.trim();
+      const cat = document.getElementById("adHocCategory").value;
+      const time = document.getElementById("adHocTime").value.trim() || "Flexible";
+      if (!title) return;
+
+      const dayData = getLifeDayData(activeLifeDate);
+      dayData.routine.push({
+        id: `adhoc_${Date.now()}`,
+        time: time,
+        title: title,
+        cat: cat,
+        catCls: "cat-adhoc"
+      });
+
+      adHocModal.style.display = "none";
+      document.getElementById("adHocTitle").value = "";
+      document.getElementById("adHocTime").value = "";
+      saveState();
+    });
+
+    function renderExpenses() {
+      const list = document.getElementById("expenseList");
+      list.innerHTML = "";
+      let total = 0;
+      (state.expenses || []).forEach((item, idx) => {
+        total += Number(item.amount || 0);
+        const row = document.createElement("div");
+        row.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:5px 8px; font-size:0.78rem;";
+        row.innerHTML = `
+          <span>${item.desc}</span>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <strong style="color:var(--warning);">₹${Number(item.amount).toLocaleString()}</strong>
+            <button style="padding:2px 6px; font-size:0.68rem; color:var(--exam);" onclick="removeExpense(${idx})">✕</button>
+          </div>
+        `;
+        list.appendChild(row);
+      });
+      document.getElementById("totalSpend").textContent = `Total: ₹${total.toLocaleString()}`;
+    }
+
+    document.getElementById("addExpenseBtn").addEventListener("click", () => {
+      const desc = document.getElementById("expenseDesc").value.trim();
+      const amount = document.getElementById("expenseAmount").value.trim();
+      if (!desc || !amount) return;
+      if (!state.expenses) state.expenses = [];
+      state.expenses.push({ desc, amount: Number(amount), date: activeLifeDate });
+      document.getElementById("expenseDesc").value = "";
+      document.getElementById("expenseAmount").value = "";
+      renderExpenses();
+      saveState();
+    });
+
+    window.removeExpense = function(idx) {
+      state.expenses.splice(idx, 1);
+      renderExpenses();
+      saveState();
+    };
+
+    // --- STUDY OS RENDERERS ---
     function updateStats() {
       const all = getAllDays();
       const doneDays = all.filter(d => state.completedDays[d.id]);
@@ -1263,6 +1275,8 @@
       }
     }
 
+    let draggedBlockData = null;
+
     function renderDays() {
       const grid = document.getElementById("daysGrid");
       const monthVal = document.getElementById("monthFilter").value;
@@ -1302,7 +1316,7 @@
               <div class="block-content">
                 <div class="block-header">
                   <span class="block-label ${b.cls}">${b.tag}</span>
-                  <span class="drag-handle" title="Drag to reorder or move to another day">⠿ drag</span>
+                  <span class="drag-handle" title="Drag to reorder or move">⠿ drag</span>
                 </div>
                 <div>${b.text}</div>
               </div>
@@ -1316,7 +1330,7 @@
               <div class="day-badges">
                 <span class="tag date-tag">📅 ${item.dateStr} (${item.dayName})</span>
                 <span class="tag">Day ${item.day} · W${item.week}</span>
-                <span class="tag ${item.isWeekend ? "weekend" : ""}">${item.isWeekend ? "Weekend (~5.5h)" : "Weekday (~3.5h)"}</span>
+                <span class="tag ${item.isWeekend ? "weekend" : ""}">${item.isWeekend ? "Weekend" : "Weekday"}</span>
                 ${item.examBadge ? `<span class="tag ${item.isExamDay ? "exam-tag" : "buffer-tag"}">${item.examBadge}</span>` : ""}
               </div>
               <label class="check-wrapper">
@@ -1357,11 +1371,9 @@
           e.preventDefault();
           blocksList.classList.add("drag-over");
         });
-
         blocksList.addEventListener("dragleave", () => {
           blocksList.classList.remove("drag-over");
         });
-
         blocksList.addEventListener("drop", (e) => {
           e.preventDefault();
           blocksList.classList.remove("drag-over");
@@ -1370,13 +1382,11 @@
           const targetDayId = item.id;
           const sourceDayId = draggedBlockData.sourceDayId;
           const blockToMove = draggedBlockData.block;
-
           if (targetDayId === sourceDayId) return;
 
           const all = getAllDays();
           const sourceDay = all.find(d => d.id === sourceDayId);
           const targetDay = all.find(d => d.id === targetDayId);
-
           if (!sourceDay || !targetDay) return;
 
           sourceDay.blocks = sourceDay.blocks.filter(b => b.id !== blockToMove.id);
@@ -1397,14 +1407,11 @@
             const all = getAllDays();
             const dayObj = all.find(d => d.id === dayId);
             const blockObj = (dayObj ? dayObj.blocks : []).find(b => b.id === bId);
-
             if (blockObj) {
               draggedBlockData = { block: blockObj, sourceDayId: dayId };
               blockEl.classList.add("dragging");
-              e.dataTransfer.setData("text/plain", bId);
             }
           });
-
           blockEl.addEventListener("dragend", () => {
             blockEl.classList.remove("dragging");
           });
@@ -1419,9 +1426,7 @@
       });
     }
 
-    // ==========================================
-    // AUTHENTICATION GATEWAY & AUTO-UNLOCK
-    // ==========================================
+    // --- AUTHENTICATION GATEWAY ---
     const authGateway = document.getElementById("authGateway");
     const appWrapper = document.getElementById("appWrapper");
 
@@ -1497,27 +1502,8 @@
     });
 
     document.getElementById("logoutBtn").addEventListener("click", async () => {
-      if (auth) {
-        await auth.signOut();
-      }
+      if (auth) await auth.signOut();
     });
-
-    // Countdowns & Global Controls
-    const quiz1Date = new Date(2026, 10, 15);
-    const quiz2Date = new Date(2026, 11, 5);
-    const endTermDate = new Date(2027, 0, 10);
-
-    function updateCountdowns() {
-      const today = new Date();
-      const q1Diff = Math.ceil((quiz1Date - today) / (1000 * 60 * 60 * 24));
-      const q2Diff = Math.ceil((quiz2Date - today) / (1000 * 60 * 60 * 24));
-      const endDiff = Math.ceil((endTermDate - today) / (1000 * 60 * 60 * 24));
-      const parts = [];
-      if (q1Diff >= 0) parts.push(`Quiz 1: ${q1Diff}d`);
-      if (q2Diff >= 0) parts.push(`Quiz 2: ${q2Diff}d`);
-      if (endDiff >= 0) parts.push(`End-Term: ${endDiff}d`);
-      document.getElementById("countdownBanner").textContent = parts.length ? "⏳ IITM Deadlines — " + parts.join(" · ") : "🎓 IITM Term Complete!";
-    }
 
     document.getElementById("monthFilter").addEventListener("change", () => {
       state.selectedWeek = "all";
