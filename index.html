@@ -518,24 +518,20 @@
   <div class="modal-overlay" id="adHocModal">
     <div class="modal">
       <h3>📅 Add Ad-Hoc Plan / Event</h3>
-      <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:8px;">
-        Add an unscheduled event (e.g. team dinner, outing, errands) without breaking your daily flow.
-      </p>
-      <label>Plan / Activity Name:</label>
-      <input type="text" id="adHocTitle" placeholder="e.g. Team Dinner with Amazon Returns team" />
+      <label>Activity Name:</label>
+      <input type="text" id="adHocTitle" placeholder="e.g. Team Dinner" />
       <label>Category:</label>
       <select id="adHocCategory">
-        <option value="Ad-Hoc">Ad-Hoc / Outing</option>
-        <option value="Mindfulness">Mindfulness / Health</option>
-        <option value="Creative">Creative / Music</option>
-        <option value="Work/Study">Work / Extra Study</option>
-        <option value="Family">Family / Personal</option>
+        <option value="Ad-Hoc">Ad-Hoc</option>
+        <option value="Mindfulness">Mindfulness</option>
+        <option value="Creative">Creative</option>
+        <option value="Work/Study">Work / Study</option>
       </select>
       <label>Time Slot:</label>
       <input type="text" id="adHocTime" placeholder="e.g. 07:30 PM - 09:30 PM" />
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
-        <button id="closeAdHocModalBtn">Cancel</button>
-        <button id="saveAdHocBtn" class="btn-primary">+ Add to Today's Routine</button>
+        <button onclick="document.getElementById('adHocModal').style.display='none'">Cancel</button>
+        <button id="saveAdHocBtn" class="btn-primary">+ Add</button>
       </div>
     </div>
   </div>
@@ -600,7 +596,7 @@
       { id: "h21", time: "10:15 - 10:30 PM", title: "Evening Meditation & Sleep by 10:30 PM", cat: "Mindfulness", catCls: "cat-mindfulness" }
     ];
 
-    const STORAGE_KEY = "ruchira_master_unified_os_v5";
+    const STORAGE_KEY = "ruchira_master_unified_os_v6";
     let state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
       lifeDates: {},
       health: { weight: "", steps: "", activeCal: "", water: "", notes: "" },
@@ -615,7 +611,15 @@
       theme: "dark"
     };
 
-    let activeLifeDate = new Date().toISOString().split("T")[0];
+    // FIX TIMEZONE SHIFT: Use local YYYY-MM-DD instead of UTC .toISOString()
+    function getLocalDateIso(d = new Date()) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    let activeLifeDate = getLocalDateIso();
 
     function applyTheme() {
       document.documentElement.setAttribute("data-theme", state.theme || "dark");
@@ -738,8 +742,8 @@
 
     for (let i = 0; i < 168; i++) {
       const dayNum = i + 1;
-      const currDate = new Date(startDate);
-      currDate.setDate(startDate.getDate() + i);
+      // Use local date creation avoiding UTC shift
+      const currDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + i);
 
       const weekNum = Math.floor(i / 7) + 1;
       const monthNum = Math.ceil(weekNum / 4);
@@ -747,7 +751,7 @@
       const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
       const dateStr = currDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
       const dayName = currDate.toLocaleDateString("en-US", { weekday: "short" });
-      const isoDate = currDate.toISOString().split("T")[0];
+      const isoDate = getLocalDateIso(currDate);
 
       let block1 = {};
       if (i < 52) {
@@ -863,7 +867,7 @@
           "Vectorless RAG (PageIndex): Reasoning Trees vs Traditional Chunking",
           "Deep Agents Architecture: Planning, Sub-agents & File Systems",
           "AI Guardrails: PII Middleware, Custom Before/After Hooks & Prompt Injection Defense",
-          "LLM Evaluations: LangSmith Evals, LLM-as-a-Judge & RAG Triad Metrics",
+          "LLM Evaluations: LangSmith Evals, LangGraph Analytics & RAG Triad Metrics",
           "LLM Gateways: LiteLLM, Fallbacks, Caching, Load Balancing & Semantic Routing"
         ];
         const aIdx = (i - 22) % agenticUnits.length;
@@ -1005,9 +1009,8 @@
       const stripEl = document.getElementById("calWeekStrip");
       stripEl.innerHTML = "";
       for (let offset = -3; offset <= 3; offset++) {
-        const pDate = new Date(dObj);
-        pDate.setDate(dObj.getDate() + offset);
-        const pIso = pDate.toISOString().split("T")[0];
+        const pDate = new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate() + offset);
+        const pIso = getLocalDateIso(pDate);
         const pDayName = pDate.toLocaleDateString("en-US", { weekday: "short" });
         const pNum = pDate.getDate();
 
@@ -1087,20 +1090,21 @@
     document.getElementById("calPrevDayBtn").addEventListener("click", () => {
       const d = new Date(activeLifeDate + "T00:00:00");
       d.setDate(d.getDate() - 1);
-      activeLifeDate = d.toISOString().split("T")[0];
+      activeLifeDate = getLocalDateIso(d);
       renderLifeOS();
     });
     document.getElementById("calNextDayBtn").addEventListener("click", () => {
       const d = new Date(activeLifeDate + "T00:00:00");
       d.setDate(d.getDate() + 1);
-      activeLifeDate = d.toISOString().split("T")[0];
+      activeLifeDate = getLocalDateIso(d);
       renderLifeOS();
     });
     document.getElementById("calTodayBtn").addEventListener("click", () => {
-      activeLifeDate = new Date().toISOString().split("T")[0];
+      activeLifeDate = getLocalDateIso();
       renderLifeOS();
     });
 
+    // Reset Day Routine
     document.getElementById("resetDayRoutineBtn").addEventListener("click", () => {
       if (confirm(`Reset routine completions for ${activeLifeDate}?`)) {
         const dayData = getLifeDayData(activeLifeDate);
@@ -1109,6 +1113,7 @@
       }
     });
 
+    // Streak Freeze Manager
     document.getElementById("freezeStreakBtn").addEventListener("click", () => {
       if ((state.lifeFreezesLeft || 0) <= 0) return alert("No streak freezes remaining!");
       const dayData = getLifeDayData(activeLifeDate);
@@ -1119,31 +1124,8 @@
       alert(`Streak freeze applied to ${activeLifeDate}.`);
     });
 
-    const adHocModal = document.createElement("div");
-    adHocModal.className = "modal-overlay";
-    adHocModal.id = "adHocModal";
-    adHocModal.innerHTML = `
-      <div class="modal">
-        <h3>📅 Add Ad-Hoc Plan / Event</h3>
-        <label>Activity Name:</label>
-        <input type="text" id="adHocTitle" placeholder="e.g. Team Dinner" />
-        <label>Category:</label>
-        <select id="adHocCategory">
-          <option value="Ad-Hoc">Ad-Hoc</option>
-          <option value="Mindfulness">Mindfulness</option>
-          <option value="Creative">Creative</option>
-          <option value="Work/Study">Work / Study</option>
-        </select>
-        <label>Time Slot:</label>
-        <input type="text" id="adHocTime" placeholder="e.g. 07:30 PM - 09:30 PM" />
-        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
-          <button onclick="document.getElementById('adHocModal').style.display='none'">Cancel</button>
-          <button id="saveAdHocBtn" class="btn-primary">+ Add</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(adHocModal);
-
+    // Ad-Hoc Plan Modal
+    const adHocModal = document.getElementById("adHocModal");
     document.getElementById("openAdHocModalBtn").addEventListener("click", () => {
       adHocModal.style.display = "flex";
     });
@@ -1330,7 +1312,7 @@
               <div class="day-badges">
                 <span class="tag date-tag">📅 ${item.dateStr} (${item.dayName})</span>
                 <span class="tag">Day ${item.day} · W${item.week}</span>
-                <span class="tag ${item.isWeekend ? "weekend" : ""}">${item.isWeekend ? "Weekend" : "Weekday"}</span>
+                <span class="tag ${item.isWeekend ? "weekend" : ""}">${item.isWeekend ? "Weekend (~5.5h)" : "Weekday (~3.5h)"}</span>
                 ${item.examBadge ? `<span class="tag ${item.isExamDay ? "exam-tag" : "buffer-tag"}">${item.examBadge}</span>` : ""}
               </div>
               <label class="check-wrapper">
